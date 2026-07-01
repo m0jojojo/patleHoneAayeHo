@@ -5,7 +5,6 @@
 	"observability": {
 		"enabled": true,
 	},
-	// Empty for now (Phase 1). Schema/migrations land in Phase 2.
 	// For local dev, "wrangler dev" creates a local SQLite file from this binding regardless of database_id.
 	// Before deploying to production, run `wrangler d1 create ingredient-first-db` and replace database_id below.
 	"d1_databases": [
@@ -15,4 +14,6 @@
 			"database_id": "local-dev-placeholder",
 		},
 	],
+	// Lets migration .sql files be imported as raw text (see src/db/migrations.ts).
+	"rules": [{ "type": "Text", "globs": ["**/*.sql"] }],
 }

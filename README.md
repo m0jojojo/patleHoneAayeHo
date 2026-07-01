@@ -50,6 +50,15 @@ file automatically — no Cloudflare account needed for local development. Befor
 production, create a real database with `wrangler d1 create ingredient-first-db` and paste the
 returned `database_id` into `wrangler.jsonc`.
 
+Apply the database schema (see [docs/schema.md](docs/schema.md) for what each table is and an ER
+diagram):
+
+```bash
+npm run db:migrate           # apply all pending migrations to your local D1
+npm run db:migrate:status    # see which migrations are applied vs. pending
+npm run db:migrate:down      # roll back the most recently applied migration
+```
+
 ## Frontend (Expo)
 
 ```bash

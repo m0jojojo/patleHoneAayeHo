@@ -28,6 +28,14 @@ module.exports = tseslint.config(
 		},
 	},
 	{
+		files: ["scripts/**/*.mjs"],
+		languageOptions: {
+			globals: {
+				...globals.node,
+			},
+		},
+	},
+	{
 		files: ["**/*.d.ts"],
 		rules: {
 			"@typescript-eslint/no-empty-object-type": "off",

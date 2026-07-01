@@ -8,7 +8,10 @@
 		"start": "wrangler dev",
 		"test": "vitest",
 		"lint": "eslint .",
-		"cf-typegen": "wrangler types"
+		"cf-typegen": "wrangler types",
+		"db:migrate": "node scripts/migrate.mjs up",
+		"db:migrate:down": "node scripts/migrate.mjs down",
+		"db:migrate:status": "node scripts/migrate.mjs status"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.12.4",
