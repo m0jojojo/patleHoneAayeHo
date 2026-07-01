@@ -1,0 +1,18 @@
+{
+	"name": "ingredient-first-backend",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-03-10",
+	"observability": {
+		"enabled": true,
+	},
+	// Empty for now (Phase 1). Schema/migrations land in Phase 2.
+	// For local dev, "wrangler dev" creates a local SQLite file from this binding regardless of database_id.
+	// Before deploying to production, run `wrangler d1 create ingredient-first-db` and replace database_id below.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "ingredient-first-db",
+			"database_id": "local-dev-placeholder",
+		},
+	],
+}

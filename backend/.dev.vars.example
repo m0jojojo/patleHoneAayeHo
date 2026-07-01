@@ -1,0 +1,14 @@
+# Copy this file to .dev.vars for local development (that file is gitignored).
+# In production, set these as Worker secrets: `wrangler secret put <NAME>`.
+
+# Vision API (dish identification + portion estimation) — see Phase 6.
+# Provider choice (Gemini vs GPT-4V) is documented in docs/meal-scanning.md once Phase 6 lands.
+VISION_API_KEY=
+
+# Razorpay (UPI payments) — wired up in Phase 10, scaffolded here so the shape exists early.
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=
+
+# D1 (SQLite at the edge) is bound in wrangler.jsonc via the `d1_databases` config,
+# not via an env var/connection string — no DB credential belongs here.
