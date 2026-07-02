@@ -31,6 +31,16 @@ export const ACTIVITY_LEVEL_LABELS: Record<ActivityLevel, string> = {
   very_active: 'Very active (physical job or 2x/day training)',
 };
 
+// Needed for the Mifflin-St Jeor BMR calculation (Phase 5), which uses a different constant for
+// each sex.
+export const SEXES = ['male', 'female'] as const;
+export type Sex = (typeof SEXES)[number];
+
+export const SEX_LABELS: Record<Sex, string> = {
+  male: 'Male',
+  female: 'Female',
+};
+
 export interface ProteinType {
   id: string;
   label: string;

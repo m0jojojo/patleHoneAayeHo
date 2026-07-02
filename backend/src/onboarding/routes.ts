@@ -11,6 +11,7 @@ import {
 	type ActivityLevel,
 	type DietType,
 	type Goal,
+	type Sex,
 } from "./constants";
 import { isValidDietType, isValidGoal, validateBodyStats } from "./validation";
 
@@ -21,6 +22,7 @@ interface UserRow {
 	weight: number | null;
 	age: number | null;
 	activity_level: string | null;
+	sex: string | null;
 	onboarding_completed_at: string | null;
 }
 
@@ -89,7 +91,7 @@ export function registerOnboardingRoutes(app: Hono<AuthEnv>): void {
 
 	app.patch("/onboarding/body-stats", requireSession, async (c) => {
 		const body = await c.req
-			.json<{ height?: unknown; weight?: unknown; age?: unknown; activityLevel?: unknown }>()
+			.json<{ height?: unknown; weight?: unknown; age?: unknown; activityLevel?: unknown; sex?: unknown }>()
 			.catch(() => ({}) as Record<string, unknown>);
 
 		const error = validateBodyStats(body);
@@ -97,8 +99,10 @@ export function registerOnboardingRoutes(app: Hono<AuthEnv>): void {
 			throw new HttpError(400, error);
 		}
 
-		await c.env.DB.prepare("UPDATE users SET height = ?, weight = ?, age = ?, activity_level = ? WHERE id = ?")
-			.bind(body.height, body.weight, body.age, body.activityLevel, c.get("user").id)
+		await c.env.DB.prepare(
+			"UPDATE users SET height = ?, weight = ?, age = ?, activity_level = ?, sex = ? WHERE id = ?",
+		)
+			.bind(body.height, body.weight, body.age, body.activityLevel, body.sex, c.get("user").id)
 			.run();
 		return c.json({ success: true });
 	});
@@ -114,7 +118,7 @@ export function registerOnboardingRoutes(app: Hono<AuthEnv>): void {
 		const userId = c.get("user").id;
 
 		const user = await c.env.DB.prepare(
-			"SELECT goal, diet_type, height, weight, age, activity_level, onboarding_completed_at FROM users WHERE id = ?",
+			"SELECT goal, diet_type, height, weight, age, activity_level, sex, onboarding_completed_at FROM users WHERE id = ?",
 		)
 			.bind(userId)
 			.first<UserRow>();
@@ -130,7 +134,11 @@ export function registerOnboardingRoutes(app: Hono<AuthEnv>): void {
 			.all<{ protein_type: string }>();
 
 		const bodyStatsComplete =
-			user.height !== null && user.weight !== null && user.age !== null && user.activity_level !== null;
+			user.height !== null &&
+			user.weight !== null &&
+			user.age !== null &&
+			user.activity_level !== null &&
+			user.sex !== null;
 
 		return c.json({
 			goal: user.goal as Goal | null,
@@ -142,6 +150,7 @@ export function registerOnboardingRoutes(app: Hono<AuthEnv>): void {
 						weight: user.weight,
 						age: user.age,
 						activityLevel: user.activity_level as ActivityLevel,
+						sex: user.sex as Sex,
 					}
 				: null,
 			completed: user.onboarding_completed_at !== null,

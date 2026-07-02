@@ -16,4 +16,10 @@ Plain-English, one line per phase.
   preferences, body stats, and a promise screen) that build their profile. Vegetarians/vegans
   never see meat, fish, or (for vegans) eggs and dairy as protein options — enforced on both the
   screen and the server. Backing out mid-onboarding and returning resumes exactly where you left
-  off instead of starting over.
+  off instead of starting over. (Added a "sex" field to the body stats screen too — needed for
+  the calorie math in Phase 5.)
+- **Phase 5 — Nutrition Database + TDEE Calculation**: seeded a starter nutrition catalog of 9
+  common home-cooked dishes (with an adjustable oil/ghee amount for dishes like dal where that
+  varies a lot), and added the math that turns a user's profile into a daily calorie/protein/carb/
+  fat target — building muscle vs. losing weight now produce different targets even at the same
+  energy level.

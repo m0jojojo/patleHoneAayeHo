@@ -10,6 +10,11 @@ export type DietType = (typeof DIET_TYPES)[number];
 export const ACTIVITY_LEVELS = ["sedentary", "light", "moderate", "active", "very_active"] as const;
 export type ActivityLevel = (typeof ACTIVITY_LEVELS)[number];
 
+// Needed for the Mifflin-St Jeor BMR calculation (Phase 5), which uses a different constant for
+// each sex. Collected alongside the rest of the body stats on Screen 4.
+export const SEXES = ["male", "female"] as const;
+export type Sex = (typeof SEXES)[number];
+
 export interface ProteinType {
 	id: string;
 	label: string;

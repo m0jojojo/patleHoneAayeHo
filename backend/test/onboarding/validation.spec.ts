@@ -1,22 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { isValidActivityLevel, isValidDietType, isValidGoal, validateBodyStats } from "../../src/onboarding/validation";
+import {
+	isValidActivityLevel,
+	isValidDietType,
+	isValidGoal,
+	isValidSex,
+	validateBodyStats,
+} from "../../src/onboarding/validation";
 
-describe("isValidGoal / isValidDietType / isValidActivityLevel", () => {
+describe("isValidGoal / isValidDietType / isValidActivityLevel / isValidSex", () => {
 	it("accepts the known enum values", () => {
 		expect(isValidGoal("lose_weight")).toBe(true);
 		expect(isValidDietType("vegan")).toBe(true);
 		expect(isValidActivityLevel("moderate")).toBe(true);
+		expect(isValidSex("female")).toBe(true);
 	});
 
 	it("rejects unknown values", () => {
 		expect(isValidGoal("get_ripped")).toBe(false);
 		expect(isValidDietType("carnivore")).toBe(false);
 		expect(isValidActivityLevel("lazy")).toBe(false);
+		expect(isValidSex("other")).toBe(false);
 	});
 });
 
 describe("validateBodyStats", () => {
-	const valid = { height: 170, weight: 70, age: 35, activityLevel: "moderate" as const };
+	const valid = { height: 170, weight: 70, age: 35, activityLevel: "moderate" as const, sex: "female" as const };
 
 	it("accepts a realistic profile", () => {
 		expect(validateBodyStats(valid)).toBeNull();
@@ -40,6 +48,10 @@ describe("validateBodyStats", () => {
 
 	it("rejects an invalid activity level", () => {
 		expect(validateBodyStats({ ...valid, activityLevel: "lazy" })).toMatch(/activity/i);
+	});
+
+	it("rejects an invalid sex", () => {
+		expect(validateBodyStats({ ...valid, sex: "other" })).toMatch(/sex/i);
 	});
 
 	it("rejects missing fields", () => {

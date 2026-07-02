@@ -5,6 +5,7 @@ import { requireSession } from "./auth/middleware";
 import { requestOtp, verifyOtp } from "./auth/otp";
 import { createSession } from "./auth/session";
 import { registerOnboardingRoutes } from "./onboarding/routes";
+import { registerNutritionRoutes } from "./nutrition/routes";
 
 const app = new Hono<AuthEnv>();
 
@@ -46,5 +47,6 @@ app.get("/auth/me", requireSession, (c) => {
 });
 
 registerOnboardingRoutes(app);
+registerNutritionRoutes(app);
 
 export default app;

@@ -82,8 +82,8 @@ written with:
 
 ### Screen 4 — Body stats
 
-Height, weight, age, and activity level. Validated both client- and server-side against the same
-ranges:
+Sex, height, weight, age, and activity level. Height/weight/age are validated both client- and
+server-side against the same ranges:
 
 | Field | Valid range |
 |---|---|
@@ -91,10 +91,14 @@ ranges:
 | Weight | 30–300 kg |
 | Age | 13–120 (whole number) |
 
-Activity level is one of: `sedentary`, `light`, `moderate`, `active`, `very_active` — the standard
-5-tier scale later used for the TDEE calculation (Phase 5).
+Sex is one of `male` / `female` — added specifically because the Mifflin-St Jeor TDEE formula
+(Phase 5) uses a different constant per sex; there was no other need for it before that.
 
-Saved via `PATCH /onboarding/body-stats`, to `users.height` / `weight` / `age` / `activity_level`.
+Activity level is one of: `sedentary`, `light`, `moderate`, `active`, `very_active` — the standard
+5-tier scale used directly by the TDEE calculation (Phase 5).
+
+Saved via `PATCH /onboarding/body-stats`, to `users.height` / `weight` / `age` / `activity_level` /
+`sex`.
 
 ### Screen 5 — Promise + start scanning
 

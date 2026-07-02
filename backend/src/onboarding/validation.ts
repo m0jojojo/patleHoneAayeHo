@@ -1,4 +1,14 @@
-import { ACTIVITY_LEVELS, BODY_STATS_RANGES, type ActivityLevel, DIET_TYPES, type DietType, GOALS, type Goal } from "./constants";
+import {
+	ACTIVITY_LEVELS,
+	BODY_STATS_RANGES,
+	type ActivityLevel,
+	DIET_TYPES,
+	type DietType,
+	GOALS,
+	type Goal,
+	SEXES,
+	type Sex,
+} from "./constants";
 
 export function isValidGoal(value: unknown): value is Goal {
 	return typeof value === "string" && (GOALS as readonly string[]).includes(value);
@@ -12,11 +22,16 @@ export function isValidActivityLevel(value: unknown): value is ActivityLevel {
 	return typeof value === "string" && (ACTIVITY_LEVELS as readonly string[]).includes(value);
 }
 
+export function isValidSex(value: unknown): value is Sex {
+	return typeof value === "string" && (SEXES as readonly string[]).includes(value);
+}
+
 export interface BodyStatsInput {
 	height: number;
 	weight: number;
 	age: number;
 	activityLevel: ActivityLevel;
+	sex: Sex;
 }
 
 // Returns the first validation problem found, or null if the input is realistic. Used both to
@@ -26,8 +41,9 @@ export function validateBodyStats(input: {
 	weight?: unknown;
 	age?: unknown;
 	activityLevel?: unknown;
+	sex?: unknown;
 }): string | null {
-	const { height, weight, age, activityLevel } = input;
+	const { height, weight, age, activityLevel, sex } = input;
 
 	if (typeof height !== "number" || !Number.isFinite(height)) return "Height must be a number.";
 	if (height < BODY_STATS_RANGES.heightCm.min || height > BODY_STATS_RANGES.heightCm.max) {
@@ -45,6 +61,7 @@ export function validateBodyStats(input: {
 	}
 
 	if (!isValidActivityLevel(activityLevel)) return "Invalid activity level.";
+	if (!isValidSex(sex)) return "Sex must be either 'male' or 'female'.";
 
 	return null;
 }

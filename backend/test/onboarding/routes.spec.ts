@@ -30,7 +30,7 @@ async function getStatus(token: string) {
 		goal: string | null;
 		dietType: string | null;
 		proteinPreferences: string[];
-		bodyStats: { height: number; weight: number; age: number; activityLevel: string } | null;
+		bodyStats: { height: number; weight: number; age: number; activityLevel: string; sex: string } | null;
 		completed: boolean;
 	}>();
 }
@@ -126,7 +126,7 @@ describe("PATCH /onboarding/protein-preferences", () => {
 });
 
 describe("PATCH /onboarding/body-stats", () => {
-	const validStats = { height: 170, weight: 65, age: 40, activityLevel: "moderate" };
+	const validStats = { height: 170, weight: 65, age: 40, activityLevel: "moderate", sex: "female" };
 
 	it("saves a realistic profile", async () => {
 		const token = await signUpAndGetToken(env.DB, PHONE);
@@ -150,6 +150,12 @@ describe("PATCH /onboarding/body-stats", () => {
 	it("rejects age over 120", async () => {
 		const token = await signUpAndGetToken(env.DB, PHONE);
 		const response = await patchJson("/onboarding/body-stats", token, { ...validStats, age: 121 });
+		expect(response.status).toBe(400);
+	});
+
+	it("rejects an invalid sex", async () => {
+		const token = await signUpAndGetToken(env.DB, PHONE);
+		const response = await patchJson("/onboarding/body-stats", token, { ...validStats, sex: "other" });
 		expect(response.status).toBe(400);
 	});
 });
@@ -219,6 +225,7 @@ describe("GET /onboarding/status - resume support", () => {
 			weight: 80,
 			age: 45,
 			activityLevel: "light",
+			sex: "male",
 		});
 		await authedFetch("/onboarding/complete", token, { method: "POST" });
 
@@ -227,7 +234,7 @@ describe("GET /onboarding/status - resume support", () => {
 			goal: "eat_healthier",
 			dietType: "non_veg",
 			proteinPreferences: expect.arrayContaining(["chicken", "fish", "eggs"]),
-			bodyStats: { height: 175, weight: 80, age: 45, activityLevel: "light" },
+			bodyStats: { height: 175, weight: 80, age: 45, activityLevel: "light", sex: "male" },
 			completed: true,
 		});
 

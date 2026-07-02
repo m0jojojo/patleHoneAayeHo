@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { saveBodyStats } from '../onboarding/api';
-import { ACTIVITY_LEVEL_LABELS, ACTIVITY_LEVELS, type ActivityLevel } from '../onboarding/constants';
+import {
+  ACTIVITY_LEVEL_LABELS,
+  ACTIVITY_LEVELS,
+  SEX_LABELS,
+  SEXES,
+  type ActivityLevel,
+  type Sex,
+} from '../onboarding/constants';
 import { validateBodyStats } from '../onboarding/validation';
 
 interface Props {
@@ -13,6 +20,7 @@ export default function BodyStatsScreen({ onNext }: Props) {
   const [weight, setWeight] = useState('');
   const [age, setAge] = useState('');
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | null>(null);
+  const [sex, setSex] = useState<Sex | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -22,6 +30,10 @@ export default function BodyStatsScreen({ onNext }: Props) {
     const parsed = { height: Number(height), weight: Number(weight), age: Number(age) };
     if (!activityLevel) {
       setError('Please select an activity level.');
+      return;
+    }
+    if (!sex) {
+      setError('Please select your sex.');
       return;
     }
 
@@ -34,7 +46,7 @@ export default function BodyStatsScreen({ onNext }: Props) {
     setSubmitting(true);
     setError(null);
     try {
-      await saveBodyStats({ ...parsed, activityLevel });
+      await saveBodyStats({ ...parsed, activityLevel, sex });
       onNext();
     } catch {
       setError("Couldn't save your details. Please try again.");
@@ -46,6 +58,18 @@ export default function BodyStatsScreen({ onNext }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container} testID="body-stats-screen">
       <Text style={styles.title}>Tell us about yourself</Text>
+
+      <Text style={styles.label}>Sex</Text>
+      {SEXES.map((option) => (
+        <Pressable
+          key={option}
+          testID={`sex-option-${option}`}
+          style={[styles.option, sex === option && styles.optionSelected]}
+          onPress={() => setSex(option)}
+        >
+          <Text style={styles.optionText}>{SEX_LABELS[option]}</Text>
+        </Pressable>
+      ))}
 
       <Text style={styles.label}>Height (cm)</Text>
       <TextInput

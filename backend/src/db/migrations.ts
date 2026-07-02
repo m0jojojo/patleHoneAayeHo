@@ -14,24 +14,56 @@ import createSessionsUp from "../../migrations/0006_create_sessions.up.sql";
 import createSessionsDown from "../../migrations/0006_create_sessions.down.sql";
 import addOnboardingCompletedAtUp from "../../migrations/0007_add_onboarding_completed_at.up.sql";
 import addOnboardingCompletedAtDown from "../../migrations/0007_add_onboarding_completed_at.down.sql";
+import addSexToUsersUp from "../../migrations/0008_add_sex_to_users.up.sql";
+import addSexToUsersDown from "../../migrations/0008_add_sex_to_users.down.sql";
+import createDishesUp from "../../migrations/0009_create_dishes.up.sql";
+import createDishesDown from "../../migrations/0009_create_dishes.down.sql";
+
+// Splits a .sql file's raw text into individual statements on ";", so a single file can contain
+// more than one statement (e.g. a CREATE TABLE followed by seed INSERTs) while each statement is
+// still run as its own db.prepare() call, as D1 requires.
+function statements(sql: string): string[] {
+	return sql
+		.split(";")
+		.map((statement) => statement.trim())
+		.filter((statement) => statement.length > 0);
+}
 
 // Each migration's up/down SQL is authored in migrations/*.sql (the same files the CLI runner,
 // scripts/migrate.mjs, applies via `wrangler d1 execute`) and imported here as raw text so the
 // exact same statements are exercised by tests.
 export const migrations: Migration[] = [
-	{ id: "0001_create_users", up: [createUsersUp], down: [createUsersDown] },
+	{ id: "0001_create_users", up: statements(createUsersUp), down: statements(createUsersDown) },
 	{
 		id: "0002_create_protein_preferences",
-		up: [createProteinPreferencesUp],
-		down: [createProteinPreferencesDown],
+		up: statements(createProteinPreferencesUp),
+		down: statements(createProteinPreferencesDown),
 	},
-	{ id: "0003_create_meals_logged", up: [createMealsLoggedUp], down: [createMealsLoggedDown] },
-	{ id: "0004_create_usual_meals", up: [createUsualMealsUp], down: [createUsualMealsDown] },
-	{ id: "0005_create_otp_requests", up: [createOtpRequestsUp], down: [createOtpRequestsDown] },
-	{ id: "0006_create_sessions", up: [createSessionsUp], down: [createSessionsDown] },
+	{
+		id: "0003_create_meals_logged",
+		up: statements(createMealsLoggedUp),
+		down: statements(createMealsLoggedDown),
+	},
+	{
+		id: "0004_create_usual_meals",
+		up: statements(createUsualMealsUp),
+		down: statements(createUsualMealsDown),
+	},
+	{
+		id: "0005_create_otp_requests",
+		up: statements(createOtpRequestsUp),
+		down: statements(createOtpRequestsDown),
+	},
+	{ id: "0006_create_sessions", up: statements(createSessionsUp), down: statements(createSessionsDown) },
 	{
 		id: "0007_add_onboarding_completed_at",
-		up: [addOnboardingCompletedAtUp],
-		down: [addOnboardingCompletedAtDown],
+		up: statements(addOnboardingCompletedAtUp),
+		down: statements(addOnboardingCompletedAtDown),
 	},
+	{
+		id: "0008_add_sex_to_users",
+		up: statements(addSexToUsersUp),
+		down: statements(addSexToUsersDown),
+	},
+	{ id: "0009_create_dishes", up: statements(createDishesUp), down: statements(createDishesDown) },
 ];

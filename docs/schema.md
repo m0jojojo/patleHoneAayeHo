@@ -1,7 +1,6 @@
 # Database schema
 
-Backend: Cloudflare D1 (SQLite at the edge). No business logic reads/writes these tables yet —
-this phase only establishes the schema and the tooling to evolve it.
+Backend: Cloudflare D1 (SQLite at the edge).
 
 ## ER diagram
 
@@ -10,6 +9,8 @@ erDiagram
     users ||--o{ protein_preferences : "has"
     users ||--o{ meals_logged : "logs"
     users ||--o{ usual_meals : "builds"
+    users ||--o{ otp_requests : "requests (by phone number)"
+    users ||--o{ sessions : "has"
 
     users {
         TEXT id PK
@@ -21,6 +22,8 @@ erDiagram
         REAL weight
         INTEGER age
         TEXT activity_level
+        TEXT sex
+        TEXT onboarding_completed_at
     }
 
     protein_preferences {
@@ -48,6 +51,37 @@ erDiagram
         INTEGER frequency_count
         TEXT last_logged_at
     }
+
+    otp_requests {
+        TEXT id PK
+        TEXT phone_number
+        TEXT code_hash
+        INTEGER attempts
+        TEXT created_at
+        TEXT expires_at
+        TEXT consumed_at
+    }
+
+    sessions {
+        TEXT id PK
+        TEXT token_hash UK
+        TEXT user_id FK
+        TEXT created_at
+        TEXT expires_at
+    }
+
+    dishes {
+        TEXT id PK
+        TEXT name UK
+        TEXT standard_portion_label
+        REAL base_calories
+        REAL base_protein_g
+        REAL base_carbs_g
+        REAL base_fat_g
+        REAL oil_variance_low_tsp
+        REAL oil_variance_medium_tsp
+        REAL oil_variance_high_tsp
+    }
 ```
 
 ## Tables, in plain English
@@ -55,9 +89,11 @@ erDiagram
 ### `users`
 
 One row per signed-up parent. Created with just a phone number (Phase 3 — phone OTP auth); the
-onboarding fields (`goal`, `diet_type`, `height`, `weight`, `age`, `activity_level`) start out
-`NULL` and get filled in during onboarding (Phase 4). `phone_number` is unique — a phone number
-can only belong to one account.
+onboarding fields (`goal`, `diet_type`, `height`, `weight`, `age`, `activity_level`, `sex`) start
+out `NULL` and get filled in during onboarding (Phase 4). `phone_number` is unique — a phone
+number can only belong to one account. `onboarding_completed_at` is set once the user finishes
+Screen 5, and never changes after that (Phase 4). `sex` (Phase 5) exists only because the TDEE
+formula needs it — it isn't used anywhere else.
 
 ### `protein_preferences`
 
@@ -86,21 +122,30 @@ dishes (`meal_signature`, the exact matching rule is defined in `docs/usual-meal
 lands). Primary key is `(user_id, meal_signature)`: logging the same combination again should
 increment `frequency_count` on the existing row, not insert a new one.
 
+### `otp_requests`
+
+Every OTP code ever requested (Phase 3), keyed by phone number rather than `user_id` — a phone
+number might not have an account yet the first time it requests a code. `code_hash` is a SHA-256
+hash, never the plaintext code. `attempts` counts failed verify attempts against that code (capped
+before locking it out); `consumed_at` is set once a code is used (or invalidated).
+
+### `sessions`
+
+Active login sessions (Phase 3). `token_hash` is a SHA-256 hash of the opaque bearer token handed
+to the client — the plaintext token is never stored. `expires_at` is 30 days from creation.
+
+### `dishes`
+
+The nutrition catalog (Phase 5) — see [docs/nutrition-engine.md](nutrition-engine.md) for the full
+explanation of the base-macros-plus-oil-variance model and how to add a new dish.
+
 ## Migrations
 
-Each table has a paired `up`/`down` SQL file in [`backend/migrations/`](../backend/migrations/):
-
-```
-0001_create_users.up.sql            0001_create_users.down.sql
-0002_create_protein_preferences.up.sql   0002_create_protein_preferences.down.sql
-0003_create_meals_logged.up.sql     0003_create_meals_logged.down.sql
-0004_create_usual_meals.up.sql      0004_create_usual_meals.down.sql
-```
-
-Applied migrations are tracked in a `_migrations` table (id + timestamp), created automatically
-the first time you run the migration tooling. A migration's SQL and its tracking row are written
-together in a single D1 batch, so a failure partway through can't leave `_migrations` out of sync
-with the actual schema.
+Each table has a paired `up`/`down` SQL file in [`backend/migrations/`](../backend/migrations/),
+numbered in the order they were introduced. Applied migrations are tracked in a `_migrations`
+table (id + timestamp), created automatically the first time you run the migration tooling. A
+migration's SQL and its tracking row are written together in a single D1 batch, so a failure
+partway through can't leave `_migrations` out of sync with the actual schema.
 
 ### Running migrations
 

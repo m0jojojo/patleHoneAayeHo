@@ -9,6 +9,7 @@ jest.mock('../onboarding/api', () => ({
 const mockSaveBodyStats = saveBodyStats as jest.Mock;
 
 function fillValidForm(getByTestId: (id: string) => any) {
+  fireEvent.press(getByTestId('sex-option-female'));
   fireEvent.changeText(getByTestId('height-input'), '170');
   fireEvent.changeText(getByTestId('weight-input'), '65');
   fireEvent.changeText(getByTestId('age-input'), '35');
@@ -34,6 +35,7 @@ describe('BodyStatsScreen', () => {
       weight: 65,
       age: 35,
       activityLevel: 'moderate',
+      sex: 'female',
     });
   });
 
@@ -69,9 +71,22 @@ describe('BodyStatsScreen', () => {
 
   it('requires an activity level to be selected', async () => {
     const { getByTestId, findByTestId } = render(<BodyStatsScreen onNext={jest.fn()} />);
+    fireEvent.press(getByTestId('sex-option-male'));
     fireEvent.changeText(getByTestId('height-input'), '170');
     fireEvent.changeText(getByTestId('weight-input'), '65');
     fireEvent.changeText(getByTestId('age-input'), '35');
+    fireEvent.press(getByTestId('body-stats-continue-button'));
+
+    expect(await findByTestId('body-stats-error')).toBeTruthy();
+    expect(mockSaveBodyStats).not.toHaveBeenCalled();
+  });
+
+  it('requires a sex to be selected', async () => {
+    const { getByTestId, findByTestId } = render(<BodyStatsScreen onNext={jest.fn()} />);
+    fireEvent.changeText(getByTestId('height-input'), '170');
+    fireEvent.changeText(getByTestId('weight-input'), '65');
+    fireEvent.changeText(getByTestId('age-input'), '35');
+    fireEvent.press(getByTestId('activity-level-option-moderate'));
     fireEvent.press(getByTestId('body-stats-continue-button'));
 
     expect(await findByTestId('body-stats-error')).toBeTruthy();

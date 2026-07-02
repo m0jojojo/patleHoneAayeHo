@@ -71,7 +71,7 @@ describe('App', () => {
       goal: 'lose_weight',
       dietType: 'vegetarian',
       proteinPreferences: ['paneer'],
-      bodyStats: { height: 170, weight: 65, age: 35, activityLevel: 'moderate' },
+      bodyStats: { height: 170, weight: 65, age: 35, activityLevel: 'moderate', sex: 'female' },
       completed: true,
     });
     const { findByTestId } = render(<App />);

@@ -18,7 +18,17 @@ async function columnNames(db: D1Database, table: string): Promise<string[]> {
 }
 
 describe("migrations", () => {
-	it("registers all seven expected migrations in order", () => {
+	const ALL_TABLES = [
+		"dishes",
+		"meals_logged",
+		"otp_requests",
+		"protein_preferences",
+		"sessions",
+		"usual_meals",
+		"users",
+	].sort();
+
+	it("registers all nine expected migrations in order", () => {
 		expect(migrations.map((m) => m.id)).toEqual([
 			"0001_create_users",
 			"0002_create_protein_preferences",
@@ -27,15 +37,15 @@ describe("migrations", () => {
 			"0005_create_otp_requests",
 			"0006_create_sessions",
 			"0007_add_onboarding_completed_at",
+			"0008_add_sex_to_users",
+			"0009_create_dishes",
 		]);
 	});
 
 	it("apply cleanly and create the expected tables", async () => {
 		const applied = await migrateUp(env.DB, migrations);
 		expect(applied).toEqual(migrations.map((m) => m.id));
-		expect(await tableNames(env.DB)).toEqual(
-			["meals_logged", "otp_requests", "protein_preferences", "sessions", "usual_meals", "users"].sort(),
-		);
+		expect(await tableNames(env.DB)).toEqual(ALL_TABLES);
 	});
 
 	it("is idempotent - running up again applies nothing new", async () => {
@@ -57,6 +67,7 @@ describe("migrations", () => {
 			"age",
 			"activity_level",
 			"onboarding_completed_at",
+			"sex",
 		]);
 	});
 
@@ -129,6 +140,20 @@ describe("migrations", () => {
 		).rejects.toThrow();
 	});
 
+	it("rejects a users row with an invalid sex", async () => {
+		await migrateUp(env.DB, migrations);
+		await expect(
+			env.DB.prepare("INSERT INTO users (id, phone_number, sex) VALUES ('u2', '+911234567891', 'other')").run(),
+		).rejects.toThrow();
+	});
+
+	it("allows a null sex on users", async () => {
+		await migrateUp(env.DB, migrations);
+		await expect(
+			env.DB.prepare("INSERT INTO users (id, phone_number) VALUES ('u3', '+911234567892')").run(),
+		).resolves.toBeDefined();
+	});
+
 	it("rolls back cleanly, in reverse order", async () => {
 		await migrateUp(env.DB, migrations);
 		const reverted = await migrateDown(env.DB, migrations, migrations.length);
@@ -140,8 +165,8 @@ describe("migrations", () => {
 	it("rolls back only the most recently applied migration by default", async () => {
 		await migrateUp(env.DB, migrations);
 		const reverted = await migrateDown(env.DB, migrations);
-		expect(reverted).toEqual(["0007_add_onboarding_completed_at"]);
-		expect(await columnNames(env.DB, "users")).not.toContain("onboarding_completed_at");
+		expect(reverted).toEqual(["0009_create_dishes"]);
+		expect(await tableNames(env.DB)).not.toContain("dishes");
 	});
 
 	it("can be re-applied after a full rollback with no leftover state", async () => {
@@ -149,8 +174,12 @@ describe("migrations", () => {
 		await migrateDown(env.DB, migrations, migrations.length);
 		const reapplied = await migrateUp(env.DB, migrations);
 		expect(reapplied).toEqual(migrations.map((m) => m.id));
-		expect(await tableNames(env.DB)).toEqual(
-			["meals_logged", "otp_requests", "protein_preferences", "sessions", "usual_meals", "users"].sort(),
-		);
+		expect(await tableNames(env.DB)).toEqual(ALL_TABLES);
+	});
+
+	it("seeds the dishes table with the expected number of rows", async () => {
+		await migrateUp(env.DB, migrations);
+		const { results } = await env.DB.prepare("SELECT COUNT(*) as count FROM dishes").all<{ count: number }>();
+		expect(results[0].count).toBe(9);
 	});
 });

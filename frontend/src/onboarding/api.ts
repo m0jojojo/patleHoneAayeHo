@@ -1,5 +1,5 @@
 import { getSessionToken } from '../auth/session';
-import type { ActivityLevel, DietType, Goal } from './constants';
+import type { ActivityLevel, DietType, Goal, Sex } from './constants';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8787';
 
@@ -49,6 +49,7 @@ export interface BodyStats {
   weight: number;
   age: number;
   activityLevel: ActivityLevel;
+  sex: Sex;
 }
 
 export function saveBodyStats(stats: BodyStats): Promise<{ success: true }> {
