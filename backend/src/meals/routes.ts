@@ -5,6 +5,8 @@ import { requireSession } from "../auth/middleware";
 import { calculateDishMacros, getDishByName, type OilLevel } from "../nutrition/dishes";
 import { logMeal, validateLogMealInput } from "./log";
 import { scanMeal } from "./scan";
+import { getTodaySummary } from "./today";
+import { getUsualMeals } from "./usual-meals";
 
 const OIL_LEVELS: OilLevel[] = ["low", "medium", "high"];
 
@@ -67,5 +69,22 @@ export function registerMealRoutes(app: Hono<AuthEnv>): void {
 		});
 
 		return c.json({ id });
+	});
+
+	app.get("/meals/today", requireSession, async (c) => {
+		const summary = await getTodaySummary(c.env.DB, c.get("user").id);
+		return c.json(summary);
+	});
+
+	// Sorted by frequency - reused by Phase 8's recommendation engine to rank candidate additions.
+	app.get("/meals/usual", requireSession, async (c) => {
+		const usualMeals = await getUsualMeals(c.env.DB, c.get("user").id);
+		return c.json({
+			usualMeals: usualMeals.map((row) => ({
+				dishLabels: JSON.parse(row.dish_labels) as string[],
+				frequencyCount: row.frequency_count,
+				lastLoggedAt: row.last_logged_at,
+			})),
+		});
 	});
 }

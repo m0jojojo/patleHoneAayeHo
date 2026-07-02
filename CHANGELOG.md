@@ -29,3 +29,8 @@ Plain-English, one line per phase.
   we're not confident, the app asks instead of guessing. Photo identification (Gemini, chosen as
   the vision provider) is stubbed for now, same as OTP delivery was in Phase 3, until a real API
   key is wired up.
+- **Phase 7 — Daily Tracking + "Usual Meals" Library**: the home screen is now a real dashboard —
+  today's calories/protein/carbs/fat consumed vs. your daily target, and everything you've logged
+  today. Behind the scenes, every logged meal quietly builds a "usual meals" list (which
+  combinations of dishes you eat, and how often) that Phase 8 will use to recommend additions from
+  food you already eat.

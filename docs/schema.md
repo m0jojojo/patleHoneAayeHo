@@ -50,6 +50,7 @@ erDiagram
         TEXT meal_signature PK
         INTEGER frequency_count
         TEXT last_logged_at
+        TEXT dish_labels
     }
 
     otp_requests {
@@ -118,9 +119,12 @@ manually-entered meal (no photo) is still valid.
 ### `usual_meals`
 
 The personal "usual meals" library (Phase 7) — how often a user logs a particular combination of
-dishes (`meal_signature`, the exact matching rule is defined in `docs/usual-meals.md` once Phase 7
-lands). Primary key is `(user_id, meal_signature)`: logging the same combination again should
-increment `frequency_count` on the existing row, not insert a new one.
+dishes. `meal_signature` is a normalized (lowercased, sorted) join of the dish labels, used only
+for matching; `dish_labels` stores the original-cased labels from the most recent log, for
+display. The exact matching rule (and its known limitations) is spelled out in
+[docs/usual-meals.md](usual-meals.md). Primary key is `(user_id, meal_signature)`: logging the
+same combination again increments `frequency_count` on the existing row via an atomic
+`INSERT ... ON CONFLICT DO UPDATE`, never inserting a duplicate.
 
 ### `otp_requests`
 

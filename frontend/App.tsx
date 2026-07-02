@@ -1,11 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { getSessionToken, saveSessionToken } from './src/auth/session';
 import type { ScanResult } from './src/meals/api';
 import { getOnboardingStatus, type OnboardingStatus } from './src/onboarding/api';
 import type { DietType } from './src/onboarding/constants';
 import BodyStatsScreen from './src/screens/BodyStatsScreen';
+import DashboardScreen from './src/screens/DashboardScreen';
 import DietTypeScreen from './src/screens/DietTypeScreen';
 import GoalScreen from './src/screens/GoalScreen';
 import MealResultsScreen from './src/screens/MealResultsScreen';
@@ -157,13 +158,10 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container} testID="home-screen">
-      <Text>You're all set.</Text>
-      <Pressable testID="scan-meal-button" style={styles.button} onPress={() => setStep({ screen: 'mealScan' })}>
-        <Text style={styles.buttonText}>Scan a meal</Text>
-      </Pressable>
+    <>
+      <DashboardScreen onScanMeal={() => setStep({ screen: 'mealScan' })} />
       <StatusBar style="auto" />
-    </View>
+    </>
   );
 }
 
@@ -175,6 +173,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 16,
   },
-  button: { backgroundColor: '#111', borderRadius: 8, paddingVertical: 14, paddingHorizontal: 24 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

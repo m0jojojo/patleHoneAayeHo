@@ -18,6 +18,8 @@ import addSexToUsersUp from "../../migrations/0008_add_sex_to_users.up.sql";
 import addSexToUsersDown from "../../migrations/0008_add_sex_to_users.down.sql";
 import createDishesUp from "../../migrations/0009_create_dishes.up.sql";
 import createDishesDown from "../../migrations/0009_create_dishes.down.sql";
+import addDishLabelsToUsualMealsUp from "../../migrations/0010_add_dish_labels_to_usual_meals.up.sql";
+import addDishLabelsToUsualMealsDown from "../../migrations/0010_add_dish_labels_to_usual_meals.down.sql";
 
 // Splits a .sql file's raw text into individual statements on ";", so a single file can contain
 // more than one statement (e.g. a CREATE TABLE followed by seed INSERTs) while each statement is
@@ -66,4 +68,9 @@ export const migrations: Migration[] = [
 		down: statements(addSexToUsersDown),
 	},
 	{ id: "0009_create_dishes", up: statements(createDishesUp), down: statements(createDishesDown) },
+	{
+		id: "0010_add_dish_labels_to_usual_meals",
+		up: statements(addDishLabelsToUsualMealsUp),
+		down: statements(addDishLabelsToUsualMealsDown),
+	},
 ];

@@ -1,4 +1,5 @@
 import type { DishMacros } from "../nutrition/dishes";
+import { recordUsualMealStatement } from "./usual-meals";
 
 export interface LogMealInput {
 	dishLabels: string[];
@@ -45,7 +46,7 @@ export function validateLogMealInput(input: {
 export async function logMeal(db: D1Database, userId: string, input: LogMealInput): Promise<{ id: string }> {
 	const id = crypto.randomUUID();
 
-	await db
+	const insertMealStatement = db
 		.prepare(
 			"INSERT INTO meals_logged (id, user_id, timestamp, dish_labels, portion_estimate, macros, source_image_ref) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		)
@@ -57,8 +58,11 @@ export async function logMeal(db: D1Database, userId: string, input: LogMealInpu
 			JSON.stringify(input.portionEstimate),
 			JSON.stringify(input.macros),
 			input.sourceImageRef ?? null,
-		)
-		.run();
+		);
+
+	// Every log updates the "usual meals" library too (Phase 7) - both writes happen atomically
+	// so a partial failure can't log a meal without tracking it, or vice versa.
+	await db.batch([insertMealStatement, recordUsualMealStatement(db, userId, input.dishLabels)]);
 
 	return { id };
 }

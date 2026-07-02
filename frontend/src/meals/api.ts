@@ -71,3 +71,32 @@ export function logMeal(input: {
 }): Promise<{ id: string }> {
   return authedRequest('/meals/log', { method: 'POST', body: JSON.stringify(input) });
 }
+
+export interface LoggedMealSummary {
+  id: string;
+  timestamp: string;
+  dishLabels: string[];
+  macros: Macros;
+}
+
+export interface TodaySummary {
+  tdee: number;
+  targets: Macros;
+  consumed: Macros;
+  remaining: Macros;
+  meals: LoggedMealSummary[];
+}
+
+export function getTodaySummary(): Promise<TodaySummary> {
+  return authedRequest('/meals/today');
+}
+
+export interface UsualMeal {
+  dishLabels: string[];
+  frequencyCount: number;
+  lastLoggedAt: string;
+}
+
+export function getUsualMeals(): Promise<{ usualMeals: UsualMeal[] }> {
+  return authedRequest('/meals/usual');
+}

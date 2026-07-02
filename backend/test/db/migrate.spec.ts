@@ -28,7 +28,7 @@ describe("migrations", () => {
 		"users",
 	].sort();
 
-	it("registers all nine expected migrations in order", () => {
+	it("registers all ten expected migrations in order", () => {
 		expect(migrations.map((m) => m.id)).toEqual([
 			"0001_create_users",
 			"0002_create_protein_preferences",
@@ -39,6 +39,7 @@ describe("migrations", () => {
 			"0007_add_onboarding_completed_at",
 			"0008_add_sex_to_users",
 			"0009_create_dishes",
+			"0010_add_dish_labels_to_usual_meals",
 		]);
 	});
 
@@ -103,6 +104,7 @@ describe("migrations", () => {
 			"meal_signature",
 			"frequency_count",
 			"last_logged_at",
+			"dish_labels",
 		]);
 	});
 
@@ -165,8 +167,8 @@ describe("migrations", () => {
 	it("rolls back only the most recently applied migration by default", async () => {
 		await migrateUp(env.DB, migrations);
 		const reverted = await migrateDown(env.DB, migrations);
-		expect(reverted).toEqual(["0009_create_dishes"]);
-		expect(await tableNames(env.DB)).not.toContain("dishes");
+		expect(reverted).toEqual(["0010_add_dish_labels_to_usual_meals"]);
+		expect(await columnNames(env.DB, "usual_meals")).not.toContain("dish_labels");
 	});
 
 	it("can be re-applied after a full rollback with no leftover state", async () => {
