@@ -1,24 +1,47 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Bind resources to your worker in `wrangler.jsonc`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+import { Hono } from "hono";
+import { HttpError } from "./auth/errors";
+import type { AuthEnv } from "./auth/middleware";
+import { requireSession } from "./auth/middleware";
+import { requestOtp, verifyOtp } from "./auth/otp";
+import { createSession } from "./auth/session";
 
-export default {
-	async fetch(request, _env, _ctx): Promise<Response> {
-		const url = new URL(request.url);
+const app = new Hono<AuthEnv>();
 
-		if (url.pathname === "/health") {
-			return Response.json({ status: "ok" });
-		}
+app.onError((err, c) => {
+	if (err instanceof HttpError) {
+		return c.json({ error: err.message }, err.status as 400 | 401 | 429);
+	}
+	console.error(err);
+	return c.json({ error: "Internal error" }, 500);
+});
 
-		return new Response("Hello World!");
-	},
-} satisfies ExportedHandler<Env>;
+app.get("/health", (c) => c.json({ status: "ok" }));
+
+app.post("/auth/otp/request", async (c) => {
+	const body = await c.req.json<{ phoneNumber?: string }>().catch(() => ({}) as { phoneNumber?: string });
+	if (!body.phoneNumber) {
+		throw new HttpError(400, "phoneNumber is required");
+	}
+
+	await requestOtp(c.env.DB, body.phoneNumber);
+	return c.json({ success: true });
+});
+
+app.post("/auth/otp/verify", async (c) => {
+	const body = await c.req
+		.json<{ phoneNumber?: string; code?: string }>()
+		.catch(() => ({}) as { phoneNumber?: string; code?: string });
+	if (!body.phoneNumber || !body.code) {
+		throw new HttpError(400, "phoneNumber and code are required");
+	}
+
+	const { userId } = await verifyOtp(c.env.DB, body.phoneNumber, body.code);
+	const { token } = await createSession(c.env.DB, userId);
+	return c.json({ token });
+});
+
+app.get("/auth/me", requireSession, (c) => {
+	return c.json({ user: c.get("user") });
+});
+
+export default app;

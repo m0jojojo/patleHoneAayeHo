@@ -18,12 +18,14 @@ async function columnNames(db: D1Database, table: string): Promise<string[]> {
 }
 
 describe("migrations", () => {
-	it("registers all four expected migrations in order", () => {
+	it("registers all six expected migrations in order", () => {
 		expect(migrations.map((m) => m.id)).toEqual([
 			"0001_create_users",
 			"0002_create_protein_preferences",
 			"0003_create_meals_logged",
 			"0004_create_usual_meals",
+			"0005_create_otp_requests",
+			"0006_create_sessions",
 		]);
 	});
 
@@ -31,7 +33,7 @@ describe("migrations", () => {
 		const applied = await migrateUp(env.DB, migrations);
 		expect(applied).toEqual(migrations.map((m) => m.id));
 		expect(await tableNames(env.DB)).toEqual(
-			["meals_logged", "protein_preferences", "usual_meals", "users"].sort(),
+			["meals_logged", "otp_requests", "protein_preferences", "sessions", "usual_meals", "users"].sort(),
 		);
 	});
 
@@ -91,6 +93,30 @@ describe("migrations", () => {
 		]);
 	});
 
+	it("produces the expected columns for otp_requests", async () => {
+		await migrateUp(env.DB, migrations);
+		expect(await columnNames(env.DB, "otp_requests")).toEqual([
+			"id",
+			"phone_number",
+			"code_hash",
+			"attempts",
+			"created_at",
+			"expires_at",
+			"consumed_at",
+		]);
+	});
+
+	it("produces the expected columns for sessions", async () => {
+		await migrateUp(env.DB, migrations);
+		expect(await columnNames(env.DB, "sessions")).toEqual([
+			"id",
+			"token_hash",
+			"user_id",
+			"created_at",
+			"expires_at",
+		]);
+	});
+
 	it("rejects a protein_preferences row with an invalid source", async () => {
 		await migrateUp(env.DB, migrations);
 		await env.DB.prepare("INSERT INTO users (id, phone_number) VALUES ('u1', '+911234567890')").run();
@@ -112,9 +138,9 @@ describe("migrations", () => {
 	it("rolls back only the most recently applied migration by default", async () => {
 		await migrateUp(env.DB, migrations);
 		const reverted = await migrateDown(env.DB, migrations);
-		expect(reverted).toEqual(["0004_create_usual_meals"]);
+		expect(reverted).toEqual(["0006_create_sessions"]);
 		const remaining = await tableNames(env.DB);
-		expect(remaining).not.toContain("usual_meals");
+		expect(remaining).not.toContain("sessions");
 		expect(remaining).toContain("users");
 	});
 
@@ -124,7 +150,7 @@ describe("migrations", () => {
 		const reapplied = await migrateUp(env.DB, migrations);
 		expect(reapplied).toEqual(migrations.map((m) => m.id));
 		expect(await tableNames(env.DB)).toEqual(
-			["meals_logged", "protein_preferences", "usual_meals", "users"].sort(),
+			["meals_logged", "otp_requests", "protein_preferences", "sessions", "usual_meals", "users"].sort(),
 		);
 	});
 });

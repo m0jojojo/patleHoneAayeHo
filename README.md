@@ -59,6 +59,10 @@ npm run db:migrate:status    # see which migrations are applied vs. pending
 npm run db:migrate:down      # roll back the most recently applied migration
 ```
 
+Phone OTP auth (`/auth/otp/request`, `/auth/otp/verify`, `/auth/me`) is documented in
+[docs/auth.md](docs/auth.md) — including the flow, rate limits, and how OTP delivery is stubbed
+(logged server-side) until a real SMS provider is wired up.
+
 ## Frontend (Expo)
 
 ```bash
