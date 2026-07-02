@@ -12,3 +12,8 @@ Plain-English, one line per phase.
   number and a one-time code — no passwords, no third-party login. Includes rate limiting, code
   expiry, a secure session, and the phone number + code entry screens. Text delivery is stubbed
   (logged, not actually sent) until a real SMS provider is chosen.
+- **Phase 4 — Onboarding Flow**: new users now walk through 5 screens (goal, diet type, protein
+  preferences, body stats, and a promise screen) that build their profile. Vegetarians/vegans
+  never see meat, fish, or (for vegans) eggs and dairy as protein options — enforced on both the
+  screen and the server. Backing out mid-onboarding and returning resumes exactly where you left
+  off instead of starting over.

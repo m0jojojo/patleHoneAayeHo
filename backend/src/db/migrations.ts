@@ -12,6 +12,8 @@ import createOtpRequestsUp from "../../migrations/0005_create_otp_requests.up.sq
 import createOtpRequestsDown from "../../migrations/0005_create_otp_requests.down.sql";
 import createSessionsUp from "../../migrations/0006_create_sessions.up.sql";
 import createSessionsDown from "../../migrations/0006_create_sessions.down.sql";
+import addOnboardingCompletedAtUp from "../../migrations/0007_add_onboarding_completed_at.up.sql";
+import addOnboardingCompletedAtDown from "../../migrations/0007_add_onboarding_completed_at.down.sql";
 
 // Each migration's up/down SQL is authored in migrations/*.sql (the same files the CLI runner,
 // scripts/migrate.mjs, applies via `wrangler d1 execute`) and imported here as raw text so the
@@ -27,4 +29,9 @@ export const migrations: Migration[] = [
 	{ id: "0004_create_usual_meals", up: [createUsualMealsUp], down: [createUsualMealsDown] },
 	{ id: "0005_create_otp_requests", up: [createOtpRequestsUp], down: [createOtpRequestsDown] },
 	{ id: "0006_create_sessions", up: [createSessionsUp], down: [createSessionsDown] },
+	{
+		id: "0007_add_onboarding_completed_at",
+		up: [addOnboardingCompletedAtUp],
+		down: [addOnboardingCompletedAtDown],
+	},
 ];

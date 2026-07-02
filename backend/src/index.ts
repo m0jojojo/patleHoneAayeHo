@@ -4,6 +4,7 @@ import type { AuthEnv } from "./auth/middleware";
 import { requireSession } from "./auth/middleware";
 import { requestOtp, verifyOtp } from "./auth/otp";
 import { createSession } from "./auth/session";
+import { registerOnboardingRoutes } from "./onboarding/routes";
 
 const app = new Hono<AuthEnv>();
 
@@ -43,5 +44,7 @@ app.post("/auth/otp/verify", async (c) => {
 app.get("/auth/me", requireSession, (c) => {
 	return c.json({ user: c.get("user") });
 });
+
+registerOnboardingRoutes(app);
 
 export default app;

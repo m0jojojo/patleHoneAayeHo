@@ -18,7 +18,7 @@ async function columnNames(db: D1Database, table: string): Promise<string[]> {
 }
 
 describe("migrations", () => {
-	it("registers all six expected migrations in order", () => {
+	it("registers all seven expected migrations in order", () => {
 		expect(migrations.map((m) => m.id)).toEqual([
 			"0001_create_users",
 			"0002_create_protein_preferences",
@@ -26,6 +26,7 @@ describe("migrations", () => {
 			"0004_create_usual_meals",
 			"0005_create_otp_requests",
 			"0006_create_sessions",
+			"0007_add_onboarding_completed_at",
 		]);
 	});
 
@@ -55,6 +56,7 @@ describe("migrations", () => {
 			"weight",
 			"age",
 			"activity_level",
+			"onboarding_completed_at",
 		]);
 	});
 
@@ -138,10 +140,8 @@ describe("migrations", () => {
 	it("rolls back only the most recently applied migration by default", async () => {
 		await migrateUp(env.DB, migrations);
 		const reverted = await migrateDown(env.DB, migrations);
-		expect(reverted).toEqual(["0006_create_sessions"]);
-		const remaining = await tableNames(env.DB);
-		expect(remaining).not.toContain("sessions");
-		expect(remaining).toContain("users");
+		expect(reverted).toEqual(["0007_add_onboarding_completed_at"]);
+		expect(await columnNames(env.DB, "users")).not.toContain("onboarding_completed_at");
 	});
 
 	it("can be re-applied after a full rollback with no leftover state", async () => {

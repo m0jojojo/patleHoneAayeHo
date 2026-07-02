@@ -2,25 +2,61 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { getSessionToken, saveSessionToken } from './src/auth/session';
+import { getOnboardingStatus, type OnboardingStatus } from './src/onboarding/api';
+import type { DietType } from './src/onboarding/constants';
+import BodyStatsScreen from './src/screens/BodyStatsScreen';
+import DietTypeScreen from './src/screens/DietTypeScreen';
+import GoalScreen from './src/screens/GoalScreen';
+import OnboardingCompleteScreen from './src/screens/OnboardingCompleteScreen';
 import OtpEntryScreen from './src/screens/OtpEntryScreen';
 import PhoneEntryScreen from './src/screens/PhoneEntryScreen';
+import ProteinPreferencesScreen from './src/screens/ProteinPreferencesScreen';
 
-type AuthStep =
+type Step =
   | { screen: 'checking' }
   | { screen: 'phone' }
   | { screen: 'otp'; phoneNumber: string }
-  | { screen: 'authenticated' };
+  | { screen: 'loadingOnboarding' }
+  | { screen: 'goal' }
+  | { screen: 'dietType' }
+  | { screen: 'proteinPreferences'; dietType: DietType }
+  | { screen: 'bodyStats' }
+  | { screen: 'onboardingComplete' }
+  | { screen: 'home' };
+
+// Determines where a signed-in user should resume, so backing out mid-onboarding and
+// returning picks up where they left off instead of restarting from Screen 1.
+function resolveOnboardingStep(status: OnboardingStatus): Step {
+  if (!status.goal) return { screen: 'goal' };
+  if (!status.dietType) return { screen: 'dietType' };
+  if (status.proteinPreferences.length === 0) {
+    return { screen: 'proteinPreferences', dietType: status.dietType };
+  }
+  if (!status.bodyStats) return { screen: 'bodyStats' };
+  if (!status.completed) return { screen: 'onboardingComplete' };
+  return { screen: 'home' };
+}
 
 export default function App() {
-  const [step, setStep] = useState<AuthStep>({ screen: 'checking' });
+  const [step, setStep] = useState<Step>({ screen: 'checking' });
+
+  async function resumeOnboarding() {
+    setStep({ screen: 'loadingOnboarding' });
+    const status = await getOnboardingStatus();
+    setStep(resolveOnboardingStep(status));
+  }
 
   useEffect(() => {
     getSessionToken().then((token) => {
-      setStep(token ? { screen: 'authenticated' } : { screen: 'phone' });
+      if (token) {
+        resumeOnboarding();
+      } else {
+        setStep({ screen: 'phone' });
+      }
     });
   }, []);
 
-  if (step.screen === 'checking') {
+  if (step.screen === 'checking' || step.screen === 'loadingOnboarding') {
     return (
       <View style={styles.container} testID="checking-screen">
         <StatusBar style="auto" />
@@ -44,7 +80,7 @@ export default function App() {
           phoneNumber={step.phoneNumber}
           onVerified={async (token) => {
             await saveSessionToken(token);
-            setStep({ screen: 'authenticated' });
+            await resumeOnboarding();
           }}
         />
         <StatusBar style="auto" />
@@ -52,9 +88,54 @@ export default function App() {
     );
   }
 
+  if (step.screen === 'goal') {
+    return (
+      <>
+        <GoalScreen onNext={() => setStep({ screen: 'dietType' })} />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
+  if (step.screen === 'dietType') {
+    return (
+      <>
+        <DietTypeScreen onNext={(dietType) => setStep({ screen: 'proteinPreferences', dietType })} />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
+  if (step.screen === 'proteinPreferences') {
+    return (
+      <>
+        <ProteinPreferencesScreen dietType={step.dietType} onNext={() => setStep({ screen: 'bodyStats' })} />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
+  if (step.screen === 'bodyStats') {
+    return (
+      <>
+        <BodyStatsScreen onNext={() => setStep({ screen: 'onboardingComplete' })} />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
+  if (step.screen === 'onboardingComplete') {
+    return (
+      <>
+        <OnboardingCompleteScreen onComplete={() => setStep({ screen: 'home' })} />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
   return (
-    <View style={styles.container} testID="authenticated-screen">
-      <Text>You're signed in.</Text>
+    <View style={styles.container} testID="home-screen">
+      <Text>You're all set.</Text>
       <StatusBar style="auto" />
     </View>
   );
