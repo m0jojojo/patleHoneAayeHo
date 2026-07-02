@@ -110,9 +110,12 @@ Which proteins a user is comfortable eating and how often. One row per protein p
 (`UNIQUE(user_id, protein_type)` — a user can't have two rows for "paneer"). `source` records
 *how* we know this preference:
 
-- `explicit` — the user told us directly (Phase 9 settings screen)
+- `explicit` — the user told us directly ("My Proteins" settings screen, Phase 9)
 - `default` — filled in automatically from onboarding answers (Phase 4)
-- `inferred` — guessed from logging behavior (Phase 9 passive learning)
+- `inferred` — reserved for a future explicit write; Phase 9's passive learning deliberately does
+  *not* write this value here. It computes an equivalent "inferred" ranking signal at request time
+  from logging history (see [docs/frequency-learning.md](frequency-learning.md)) without ever
+  touching the stored row, so a later explicit change never has to fight an overwritten default.
 
 `source` is constrained to exactly these three values at the database level (`CHECK` constraint) —
 inserting anything else fails.

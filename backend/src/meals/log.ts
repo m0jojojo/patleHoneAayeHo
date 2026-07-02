@@ -43,7 +43,20 @@ export function validateLogMealInput(input: {
 	return null;
 }
 
-export async function logMeal(db: D1Database, userId: string, input: LogMealInput): Promise<{ id: string }> {
+export interface LogMealResult {
+	id: string;
+	// True only for a user's very first-ever logged meal - the frontend uses this to show a
+	// one-time, skippable nudge toward the "My Proteins" settings screen (Phase 9).
+	showSettingsNudge: boolean;
+}
+
+export async function logMeal(db: D1Database, userId: string, input: LogMealInput): Promise<LogMealResult> {
+	const existing = await db
+		.prepare("SELECT COUNT(*) as count FROM meals_logged WHERE user_id = ?")
+		.bind(userId)
+		.first<{ count: number }>();
+	const isFirstMeal = (existing?.count ?? 0) === 0;
+
 	const id = crypto.randomUUID();
 
 	const insertMealStatement = db
@@ -64,5 +77,5 @@ export async function logMeal(db: D1Database, userId: string, input: LogMealInpu
 	// so a partial failure can't log a meal without tracking it, or vice versa.
 	await db.batch([insertMealStatement, recordUsualMealStatement(db, userId, input.dishLabels)]);
 
-	return { id };
+	return { id, showSettingsNudge: isFirstMeal };
 }

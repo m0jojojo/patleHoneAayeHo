@@ -109,6 +109,18 @@ describe("POST /meals/log", () => {
 		expect(row!.source_image_ref).toBeNull();
 	});
 
+	it("flags showSettingsNudge only for the user's first-ever logged meal", async () => {
+		const token = await signUpAndGetToken(env.DB, PHONE);
+
+		const first = await postJson("/meals/log", token, validPayload);
+		const firstBody = await first.json<{ showSettingsNudge: boolean }>();
+		expect(firstBody.showSettingsNudge).toBe(true);
+
+		const second = await postJson("/meals/log", token, validPayload);
+		const secondBody = await second.json<{ showSettingsNudge: boolean }>();
+		expect(secondBody.showSettingsNudge).toBe(false);
+	});
+
 	it("rejects an empty dishLabels array", async () => {
 		const token = await signUpAndGetToken(env.DB, PHONE);
 		const response = await postJson("/meals/log", token, { ...validPayload, dishLabels: [] });

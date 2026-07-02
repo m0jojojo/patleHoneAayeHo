@@ -1,4 +1,5 @@
 import { getSessionToken } from '../auth/session';
+import type { FrequencyComfort } from '../onboarding/constants';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8787';
 
@@ -28,22 +29,23 @@ async function authedRequest<T>(path: string, init: RequestInit = {}): Promise<T
   return data as T;
 }
 
-export interface Recommendation {
-  type: 'addition';
+export interface ProteinPreferenceSetting {
   proteinType: string;
   proteinLabel: string;
-  source: 'explicit' | 'inferred' | 'default';
-  message: string;
-  remainingProteinG: number;
+  frequencyComfort: FrequencyComfort;
+  source: 'default' | 'explicit' | 'inferred';
 }
 
-export function getCurrentRecommendation(): Promise<{ recommendation: Recommendation | null }> {
-  return authedRequest('/recommendations/current');
+export function getProteinSettings(): Promise<{ preferences: ProteinPreferenceSetting[] }> {
+  return authedRequest('/settings/protein-preferences');
 }
 
-export function dismissRecommendation(proteinType: string): Promise<{ success: true; suggestFrequencyPrompt: boolean }> {
-  return authedRequest('/recommendations/dismiss', {
-    method: 'POST',
-    body: JSON.stringify({ proteinType }),
+export function setProteinFrequency(
+  proteinType: string,
+  frequencyComfort: FrequencyComfort,
+): Promise<{ success: true }> {
+  return authedRequest('/settings/protein-frequency', {
+    method: 'PATCH',
+    body: JSON.stringify({ proteinType, frequencyComfort }),
   });
 }

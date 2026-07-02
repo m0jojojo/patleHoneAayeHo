@@ -61,14 +61,14 @@ export function registerMealRoutes(app: Hono<AuthEnv>): void {
 			throw new HttpError(400, error);
 		}
 
-		const { id } = await logMeal(c.env.DB, c.get("user").id, {
+		const { id, showSettingsNudge } = await logMeal(c.env.DB, c.get("user").id, {
 			dishLabels: body.dishLabels as string[],
 			portionEstimate: body.portionEstimate,
 			macros: body.macros as { calories: number; proteinG: number; carbsG: number; fatG: number },
 			sourceImageRef: body.sourceImageRef ?? null,
 		});
 
-		return c.json({ id });
+		return c.json({ id, showSettingsNudge });
 	});
 
 	app.get("/meals/today", requireSession, async (c) => {

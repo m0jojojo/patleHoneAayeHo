@@ -141,26 +141,55 @@ describe("getProteinGapRecommendation - priority ranking (isolated fixtures)", (
 		expect(recommendation?.type).toBe("addition");
 	});
 
-	it("tier 2 (history): prefers the protein with logging history over an unlogged default", async () => {
+	it("tier 2 (passive override): prefers the protein with strong, unambiguous logging history over an unlogged default", async () => {
 		const userId = await createOnboardedUser("vegetarian");
 		await addPreference(userId, "paneer", "default");
 		await addPreference(userId, "dal_lentils", "default");
-		// Logging this meal both records history AND contributes toward today's protein total, so
-		// log it on a different (earlier) day to keep today's remaining gap intact.
-		await logMealDirectly(userId, ["Paneer curry"], 30, new Date("2026-01-14T10:00:00.000Z"));
+		// 5+ logs in the trailing 14 days, zero for the competing candidate - meets the passive
+		// override threshold. Logged on earlier days so today's protein gap stays intact.
+		for (let day = 1; day <= 5; day += 1) {
+			await logMealDirectly(userId, ["Paneer curry"], 5, new Date(`2026-01-${10 + day}T10:00:00.000Z`));
+		}
 
 		const recommendation = await getProteinGapRecommendation(env.DB, userId, MORNING);
-		expect(recommendation?.source).toBe("history");
+		expect(recommendation?.source).toBe("inferred");
 		expect(recommendation?.proteinType).toBe("paneer");
-		expect(recommendation?.message).toMatch(/wednesday/i);
+		expect(recommendation?.message).toMatch(/often lately/i);
 	});
 
-	it("tier 1 (explicit) beats history - an explicit preference wins even when a different protein has strong logging history", async () => {
+	it("does not apply the passive override before the threshold is met (fewer than 5 logs)", async () => {
+		const userId = await createOnboardedUser("vegetarian");
+		await addPreference(userId, "paneer", "default");
+		await addPreference(userId, "dal_lentils", "default");
+		for (let day = 1; day <= 4; day += 1) {
+			await logMealDirectly(userId, ["Paneer curry"], 5, new Date(`2026-01-${10 + day}T10:00:00.000Z`));
+		}
+
+		const recommendation = await getProteinGapRecommendation(env.DB, userId, MORNING);
+		expect(recommendation?.source).toBe("default");
+	});
+
+	it("does not apply the passive override when a competing candidate also has logging history", async () => {
+		const userId = await createOnboardedUser("vegetarian");
+		await addPreference(userId, "paneer", "default");
+		await addPreference(userId, "dal_lentils", "default");
+		for (let day = 1; day <= 5; day += 1) {
+			await logMealDirectly(userId, ["Paneer curry"], 5, new Date(`2026-01-${10 + day}T10:00:00.000Z`));
+		}
+		// Even a single log for the competing candidate breaks the "zero for competing" rule.
+		await logMealDirectly(userId, ["Dal (tadka)"], 5, new Date("2026-01-05T10:00:00.000Z"));
+
+		const recommendation = await getProteinGapRecommendation(env.DB, userId, MORNING);
+		expect(recommendation?.source).toBe("default");
+	});
+
+	it("tier 1 (explicit) beats passive override - an explicit preference wins even when a different protein has strong logging history", async () => {
 		const userId = await createOnboardedUser("vegetarian");
 		await addPreference(userId, "paneer", "default");
 		await addPreference(userId, "dal_lentils", "explicit");
-		await logMealDirectly(userId, ["Paneer curry"], 5, new Date("2026-01-13T10:00:00.000Z"));
-		await logMealDirectly(userId, ["Paneer curry"], 5, new Date("2026-01-14T10:00:00.000Z"));
+		for (let day = 1; day <= 5; day += 1) {
+			await logMealDirectly(userId, ["Paneer curry"], 5, new Date(`2026-01-${10 + day}T10:00:00.000Z`));
+		}
 
 		const recommendation = await getProteinGapRecommendation(env.DB, userId, MORNING);
 		expect(recommendation?.source).toBe("explicit");
@@ -172,10 +201,14 @@ describe("getProteinGapRecommendation - priority ranking (isolated fixtures)", (
 		await addPreference(coldStart, "tofu_soy", "default");
 		expect((await getProteinGapRecommendation(env.DB, coldStart, MORNING))?.type).toBe("addition");
 
-		const historyUser = await createOnboardedUser("vegan");
-		await addPreference(historyUser, "tofu_soy", "default");
-		await logMealDirectly(historyUser, ["Tofu stir fry"], 5, new Date("2026-01-14T10:00:00.000Z"));
-		expect((await getProteinGapRecommendation(env.DB, historyUser, MORNING))?.type).toBe("addition");
+		const inferredUser = await createOnboardedUser("vegan");
+		await addPreference(inferredUser, "dal_lentils", "default");
+		for (let day = 1; day <= 5; day += 1) {
+			await logMealDirectly(inferredUser, ["Dal (tadka)"], 5, new Date(`2026-01-${10 + day}T10:00:00.000Z`));
+		}
+		const inferredRecommendation = await getProteinGapRecommendation(env.DB, inferredUser, MORNING);
+		expect(inferredRecommendation?.source).toBe("inferred");
+		expect(inferredRecommendation?.type).toBe("addition");
 
 		const explicitUser = await createOnboardedUser("vegan");
 		await addPreference(explicitUser, "tofu_soy", "explicit");

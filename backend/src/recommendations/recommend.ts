@@ -1,10 +1,9 @@
 import { getTodaySummary } from "../meals/today";
-import { getUsualMeals } from "../meals/usual-meals";
 import { isProteinAllowedForDietType, PROTEIN_TYPES, type DietType } from "../onboarding/constants";
-import { proteinTypeForDishLabel } from "./dish-protein-map";
 import { shouldRecommendProteinGap } from "./gap-detection";
+import { getPassiveOverrideProtein } from "./passive-override";
 
-export type RecommendationSource = "explicit" | "history" | "default";
+export type RecommendationSource = "explicit" | "inferred" | "default";
 
 export interface Recommendation {
 	// Always "addition" - see docs/recommendation-engine.md for why this is a literal, tested
@@ -34,29 +33,24 @@ function proteinLabel(proteinType: string): string {
 	return PROTEIN_TYPES.find((protein) => protein.id === proteinType)?.label ?? proteinType;
 }
 
-function formatWeekday(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
-}
-
 function buildRecommendation(
 	proteinType: string,
 	source: RecommendationSource,
 	remainingProteinG: number,
-	lastLoggedAt?: string,
 ): Recommendation {
 	const label = proteinLabel(proteinType);
 	const message =
-		source === "history" && lastLoggedAt
-			? `Add some ${label.toLowerCase()} — you had it ${formatWeekday(lastLoggedAt)}.`
+		source === "inferred"
+			? `Add some ${label.toLowerCase()} — you've been eating it often lately.`
 			: `Add some ${label.toLowerCase()} to help hit your protein target today.`;
 
 	return { type: "addition", proteinType, proteinLabel: label, source, message, remainingProteinG };
 }
 
-// The priority order, in one place (see docs/recommendation-engine.md for the full writeup with
-// examples):
-//   1. explicit protein_preferences (Phase 9 lets a user set these directly)
-//   2. usual_meals logging history (what they've actually been eating, most frequent first)
+// The priority order, in one place (see docs/recommendation-engine.md and
+// docs/frequency-learning.md for the full writeup with examples):
+//   1. explicit protein_preferences (Phase 9's "My Proteins" settings screen)
+//   2. passive override: strong, unambiguous logging history (Phase 9's threshold rule)
 //   3. cold-start default: the first protein they selected during onboarding
 // At every tier, candidates are restricted to protein_preferences the user already selected
 // (diet-type filtering re-checked here too, not just at onboarding) - this function can never
@@ -94,16 +88,10 @@ export async function getProteinGapRecommendation(
 		return buildRecommendation(explicit.protein_type, "explicit", remainingProteinG);
 	}
 
-	const usualMeals = await getUsualMeals(db, userId);
-	const candidateProteinTypes = new Set(candidates.map((preference) => preference.protein_type));
-	for (const meal of usualMeals) {
-		const dishLabels: string[] = JSON.parse(meal.dish_labels);
-		for (const dishLabel of dishLabels) {
-			const proteinType = proteinTypeForDishLabel(dishLabel);
-			if (proteinType && candidateProteinTypes.has(proteinType)) {
-				return buildRecommendation(proteinType, "history", remainingProteinG, meal.last_logged_at);
-			}
-		}
+	const nonExplicitProteinTypes = candidates.map((preference) => preference.protein_type);
+	const inferredProteinType = await getPassiveOverrideProtein(db, userId, nonExplicitProteinTypes, now);
+	if (inferredProteinType) {
+		return buildRecommendation(inferredProteinType, "inferred", remainingProteinG);
 	}
 
 	return buildRecommendation(candidates[0].protein_type, "default", remainingProteinG);

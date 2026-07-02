@@ -40,24 +40,26 @@ Within that universe, three tiers, checked in order — the first one with data 
 
 ### 1. Explicit preference
 
-If any candidate has `protein_preferences.source = 'explicit'` (set via Phase 9's settings
-screen — no rows will actually have this source until Phase 9 ships, but the ranking is ready for
-it), that one is recommended.
+If any candidate has `protein_preferences.source = 'explicit'` (set via the "My Proteins" settings
+screen, Phase 9), that one is recommended.
 
 > Example: user has explicitly set "chicken" as a frequent protein. Even if they've been logging
 > paneer constantly, chicken still wins this tier.
 
-### 2. Logging history (`usual_meals`)
+### 2. Passive override (inferred from logging history)
 
-If no explicit preference exists, look at the user's `usual_meals` (Phase 7), most frequent first,
-and recommend the first one whose dishes map to a candidate protein (via
-`backend/src/recommendations/dish-protein-map.ts`, a small explicit table connecting nutrition
-catalog dish names to protein-type ids — e.g. `"Chicken curry"` → `"chicken"`). The message
-references the day it was last logged: *"Add some paneer — you had it Wednesday."*
+If no explicit preference exists, check whether logging history gives a strong, unambiguous
+signal for one candidate: **5+ logs in the last 14 days, with zero logs for every other
+candidate** in that window (see [docs/frequency-learning.md](frequency-learning.md) for the full
+rationale and edge cases). Dish → protein matching uses
+`backend/src/recommendations/dish-protein-map.ts` (e.g. `"Chicken curry"` → `"chicken"`). The
+message is aggregate, not tied to one specific day: *"Add some paneer — you've been eating it
+often lately."*
 
-> Example: user selected both paneer and dal_lentils at onboarding but has only ever actually
-> logged paneer dishes. Paneer wins this tier over dal_lentils, since there's no explicit
-> preference to check first.
+> Example: user selected both paneer and dal_lentils at onboarding, has logged paneer dishes 6
+> times in the last two weeks and dal_lentils zero times. Paneer wins this tier. If dal_lentils
+> also had even one log in that window, neither would be unambiguous enough, and the recommendation
+> would fall through to tier 3 instead.
 
 ### 3. Cold-start default
 
@@ -72,9 +74,10 @@ today."*
 ## Dismissals
 
 `POST /recommendations/dismiss` logs which protein was dismissed and when
-(`recommendation_dismissals`). It doesn't change today's recommendation — it exists purely to feed
-Phase 9's passive learning (repeated dismissals of the same protein should eventually prompt the
-user to adjust that protein's frequency setting).
+(`recommendation_dismissals`). It doesn't change today's recommendation — it exists to feed Phase
+9's repeated-dismissal detection (dismissing the same protein 3 times in a row without accepting
+it prompts the user to adjust that protein's frequency setting directly — see
+[docs/frequency-learning.md](frequency-learning.md)).
 
 ## Endpoints
 
@@ -89,5 +92,5 @@ Both require a session:
 
 If you add a new dish to the nutrition catalog (Phase 5) that's a meaningful protein source, add
 a matching entry to `DISH_NAME_TO_PROTEIN_TYPE` in
-`backend/src/recommendations/dish-protein-map.ts` — otherwise tier 2 (logging history) can never
+`backend/src/recommendations/dish-protein-map.ts` — otherwise tier 2 (passive override) can never
 pick up that dish.

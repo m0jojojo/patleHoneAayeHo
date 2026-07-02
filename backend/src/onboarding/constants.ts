@@ -56,9 +56,17 @@ export function getAllowedProteinTypes(dietType: DietType): ProteinType[] {
 	return PROTEIN_TYPES.filter((protein) => isProteinAllowedForDietType(protein.id, dietType));
 }
 
-// Applied to every protein selected during onboarding (Screen 3) — source is always "default"
-// here; "explicit" only happens later when a user edits it themselves (Phase 9).
-export const DEFAULT_FREQUENCY_COMFORT = "few_times_a_week";
+// The 3-option toggle on the "My Proteins" settings screen (Phase 9). Applied to every protein
+// selected during onboarding (Screen 3) as the starting value, with source "default" — becomes
+// "explicit" only once a user actually sets it themselves via settings.
+export const FREQUENCY_COMFORT_LEVELS = ["rarely", "few_times_a_week", "daily"] as const;
+export type FrequencyComfort = (typeof FREQUENCY_COMFORT_LEVELS)[number];
+
+export function isValidFrequencyComfort(value: unknown): value is FrequencyComfort {
+	return typeof value === "string" && (FREQUENCY_COMFORT_LEVELS as readonly string[]).includes(value);
+}
+
+export const DEFAULT_FREQUENCY_COMFORT: FrequencyComfort = "few_times_a_week";
 
 export const BODY_STATS_RANGES = {
 	heightCm: { min: 100, max: 250 },

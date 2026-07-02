@@ -81,3 +81,13 @@ export const BODY_STATS_RANGES = {
   weightKg: { min: 30, max: 300 },
   age: { min: 13, max: 120 },
 } as const;
+
+// The 3-option toggle on the "My Proteins" settings screen (Phase 9).
+export const FREQUENCY_COMFORT_LEVELS = ['rarely', 'few_times_a_week', 'daily'] as const;
+export type FrequencyComfort = (typeof FREQUENCY_COMFORT_LEVELS)[number];
+
+export const FREQUENCY_COMFORT_LABELS: Record<FrequencyComfort, string> = {
+  rarely: 'Rarely',
+  few_times_a_week: 'A few times a week',
+  daily: 'Daily',
+};

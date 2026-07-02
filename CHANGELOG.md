@@ -39,3 +39,10 @@ Plain-English, one line per phase.
   you already eat, never a new food and never a "swap." It prefers what you've told us directly,
   then what you actually tend to log, then falls back to whatever you picked at onboarding. You
   can dismiss a suggestion, which is quietly noted for Phase 9 to learn from.
+- **Phase 9 — Passive Frequency Learning**: added a "My Proteins" settings screen where you can
+  directly say how often you want each protein suggested — that always wins over guessing. If you
+  don't set anything, but clearly favor one protein in your actual logging (5+ times in two weeks,
+  with none of the alternatives logged at all), the app quietly picks up on that instead of
+  guessing blindly. After your first logged meal, a skippable prompt points you to that settings
+  screen. Dismiss the same suggestion 3 times in a row and the dashboard offers to help you adjust
+  it directly, instead of keep suggesting something you clearly don't want.

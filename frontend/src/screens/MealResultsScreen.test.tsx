@@ -103,7 +103,7 @@ describe('MealResultsScreen', () => {
         },
       ],
     };
-    mockLogMeal.mockResolvedValueOnce({ id: 'abc' });
+    mockLogMeal.mockResolvedValueOnce({ id: 'abc', showSettingsNudge: true });
 
     const onLogged = jest.fn();
     const { getByTestId } = render(<MealResultsScreen scanResult={scanResult} onLogged={onLogged} />);
@@ -111,7 +111,7 @@ describe('MealResultsScreen', () => {
     fireEvent.changeText(getByTestId('calories-input'), '250');
     fireEvent.press(getByTestId('log-meal-button'));
 
-    await waitFor(() => expect(onLogged).toHaveBeenCalled());
+    await waitFor(() => expect(onLogged).toHaveBeenCalledWith({ showSettingsNudge: true }));
     expect(mockLogMeal).toHaveBeenCalledWith(
       expect.objectContaining({ macros: expect.objectContaining({ calories: 250 }) }),
     );
@@ -119,7 +119,7 @@ describe('MealResultsScreen', () => {
 
   it('falls back to manual entry when the vision scan failed', async () => {
     const scanResult: ScanResult = { visionFailed: true, dishes: [] };
-    mockLogMeal.mockResolvedValueOnce({ id: 'abc' });
+    mockLogMeal.mockResolvedValueOnce({ id: 'abc', showSettingsNudge: true });
 
     const onLogged = jest.fn();
     const { getByTestId, findByTestId } = render(<MealResultsScreen scanResult={scanResult} onLogged={onLogged} />);
@@ -133,7 +133,7 @@ describe('MealResultsScreen', () => {
     fireEvent.changeText(getByTestId('calories-input'), '400');
     fireEvent.press(getByTestId('log-meal-button'));
 
-    await waitFor(() => expect(onLogged).toHaveBeenCalled());
+    await waitFor(() => expect(onLogged).toHaveBeenCalledWith({ showSettingsNudge: true }));
     expect(mockLogMeal).toHaveBeenCalledWith(
       expect.objectContaining({ dishLabels: ['Dal and rice'], macros: expect.objectContaining({ calories: 400 }) }),
     );

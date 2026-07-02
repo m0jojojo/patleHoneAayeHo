@@ -15,6 +15,8 @@ import OnboardingCompleteScreen from './src/screens/OnboardingCompleteScreen';
 import OtpEntryScreen from './src/screens/OtpEntryScreen';
 import PhoneEntryScreen from './src/screens/PhoneEntryScreen';
 import ProteinPreferencesScreen from './src/screens/ProteinPreferencesScreen';
+import ProteinSettingsScreen from './src/screens/ProteinSettingsScreen';
+import SettingsNudgeScreen from './src/screens/SettingsNudgeScreen';
 
 type Step =
   | { screen: 'checking' }
@@ -28,7 +30,9 @@ type Step =
   | { screen: 'onboardingComplete' }
   | { screen: 'home' }
   | { screen: 'mealScan' }
-  | { screen: 'mealResults'; scanResult: ScanResult };
+  | { screen: 'mealResults'; scanResult: ScanResult }
+  | { screen: 'settingsNudge' }
+  | { screen: 'proteinSettings' };
 
 // Determines where a signed-in user should resume, so backing out mid-onboarding and
 // returning picks up where they left off instead of restarting from Screen 1.
@@ -151,7 +155,33 @@ export default function App() {
   if (step.screen === 'mealResults') {
     return (
       <>
-        <MealResultsScreen scanResult={step.scanResult} onLogged={() => setStep({ screen: 'home' })} />
+        <MealResultsScreen
+          scanResult={step.scanResult}
+          onLogged={({ showSettingsNudge }) =>
+            setStep(showSettingsNudge ? { screen: 'settingsNudge' } : { screen: 'home' })
+          }
+        />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
+  if (step.screen === 'settingsNudge') {
+    return (
+      <>
+        <SettingsNudgeScreen
+          onSetPreferences={() => setStep({ screen: 'proteinSettings' })}
+          onSkip={() => setStep({ screen: 'home' })}
+        />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
+  if (step.screen === 'proteinSettings') {
+    return (
+      <>
+        <ProteinSettingsScreen onDone={() => setStep({ screen: 'home' })} />
         <StatusBar style="auto" />
       </>
     );
@@ -159,7 +189,10 @@ export default function App() {
 
   return (
     <>
-      <DashboardScreen onScanMeal={() => setStep({ screen: 'mealScan' })} />
+      <DashboardScreen
+        onScanMeal={() => setStep({ screen: 'mealScan' })}
+        onOpenSettings={() => setStep({ screen: 'proteinSettings' })}
+      />
       <StatusBar style="auto" />
     </>
   );

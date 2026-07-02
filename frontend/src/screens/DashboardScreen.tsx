@@ -5,6 +5,7 @@ import { dismissRecommendation, getCurrentRecommendation, type Recommendation } 
 
 interface Props {
   onScanMeal: () => void;
+  onOpenSettings: () => void;
 }
 
 function MacroRow({ label, consumed, target }: { label: string; consumed: number; target: number }) {
@@ -24,11 +25,12 @@ function MacroRow({ label, consumed, target }: { label: string; consumed: number
   );
 }
 
-export default function DashboardScreen({ onScanMeal }: Props) {
+export default function DashboardScreen({ onScanMeal, onOpenSettings }: Props) {
   const [summary, setSummary] = useState<TodaySummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
   const [dismissing, setDismissing] = useState(false);
+  const [frequencyPromptFor, setFrequencyPromptFor] = useState<string | null>(null);
 
   useEffect(() => {
     getTodaySummary()
@@ -43,7 +45,8 @@ export default function DashboardScreen({ onScanMeal }: Props) {
     if (!recommendation || dismissing) return;
     setDismissing(true);
     try {
-      await dismissRecommendation(recommendation.proteinType);
+      const result = await dismissRecommendation(recommendation.proteinType);
+      setFrequencyPromptFor(result.suggestFrequencyPrompt ? recommendation.proteinLabel : null);
       setRecommendation(null);
     } catch {
       // Leave the card up - the user can try dismissing again.
@@ -75,7 +78,12 @@ export default function DashboardScreen({ onScanMeal }: Props) {
 
   return (
     <ScrollView contentContainerStyle={styles.container} testID="dashboard-screen">
-      <Text style={styles.title}>Today</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Today</Text>
+        <Pressable testID="open-settings-button" onPress={onOpenSettings}>
+          <Text style={styles.settingsLink}>My Proteins</Text>
+        </Pressable>
+      </View>
 
       <MacroRow label="Calories" consumed={summary.consumed.calories} target={summary.targets.calories} />
       <MacroRow label="Protein (g)" consumed={summary.consumed.proteinG} target={summary.targets.proteinG} />
@@ -87,6 +95,21 @@ export default function DashboardScreen({ onScanMeal }: Props) {
           <Text style={styles.recommendationText}>{recommendation.message}</Text>
           <Pressable testID="dismiss-recommendation-button" onPress={handleDismiss} disabled={dismissing}>
             <Text style={styles.dismissText}>Dismiss</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {frequencyPromptFor ? (
+        <View testID="frequency-prompt" style={styles.frequencyPrompt}>
+          <Text style={styles.frequencyPromptText}>Want to adjust how often we suggest {frequencyPromptFor}?</Text>
+          <Pressable
+            testID="adjust-frequency-button"
+            onPress={() => {
+              setFrequencyPromptFor(null);
+              onOpenSettings();
+            }}
+          >
+            <Text style={styles.adjustText}>Adjust</Text>
           </Pressable>
         </View>
       ) : null}
@@ -114,7 +137,9 @@ export default function DashboardScreen({ onScanMeal }: Props) {
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1, padding: 24, gap: 8 },
-  title: { fontSize: 22, fontWeight: '600', marginBottom: 8 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  title: { fontSize: 22, fontWeight: '600' },
+  settingsLink: { fontSize: 14, color: '#0066cc', fontWeight: '600' },
   subtitle: { fontSize: 16, fontWeight: '600', marginTop: 16 },
   macroRow: { marginBottom: 12 },
   macroHeader: { flexDirection: 'row', justifyContent: 'space-between' },
@@ -137,6 +162,19 @@ const styles = StyleSheet.create({
   },
   recommendationText: { fontSize: 14, flexShrink: 1, marginRight: 8 },
   dismissText: { fontSize: 13, color: '#666', fontWeight: '600' },
+  frequencyPrompt: {
+    backgroundColor: '#eef4fb',
+    borderWidth: 1,
+    borderColor: '#cfe0f0',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  frequencyPromptText: { fontSize: 13, flexShrink: 1, marginRight: 8 },
+  adjustText: { fontSize: 13, color: '#0066cc', fontWeight: '600' },
   mealRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

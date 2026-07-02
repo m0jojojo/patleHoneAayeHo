@@ -42,7 +42,9 @@ describe('DashboardScreen', () => {
   it('shows consumed vs target macros and today\'s meals', async () => {
     mockGetTodaySummary.mockResolvedValueOnce(baseSummary);
 
-    const { findByTestId, getByTestId } = render(<DashboardScreen onScanMeal={jest.fn()} />);
+    const { findByTestId, getByTestId } = render(
+      <DashboardScreen onScanMeal={jest.fn()} onOpenSettings={jest.fn()} />,
+    );
     expect(await findByTestId('dashboard-screen')).toBeTruthy();
 
     expect(getByTestId('macro-value-Calories').props.children.join('')).toBe('500 / 2000');
@@ -53,13 +55,13 @@ describe('DashboardScreen', () => {
   it('shows an empty state when no meals are logged yet', async () => {
     mockGetTodaySummary.mockResolvedValueOnce({ ...baseSummary, meals: [] });
 
-    const { findByTestId } = render(<DashboardScreen onScanMeal={jest.fn()} />);
+    const { findByTestId } = render(<DashboardScreen onScanMeal={jest.fn()} onOpenSettings={jest.fn()} />);
     expect(await findByTestId('no-meals-text')).toBeTruthy();
   });
 
   it('shows an error state if loading fails', async () => {
     mockGetTodaySummary.mockRejectedValueOnce(new Error('network error'));
-    const { findByTestId } = render(<DashboardScreen onScanMeal={jest.fn()} />);
+    const { findByTestId } = render(<DashboardScreen onScanMeal={jest.fn()} onOpenSettings={jest.fn()} />);
     expect(await findByTestId('dashboard-error')).toBeTruthy();
   });
 
@@ -67,18 +69,35 @@ describe('DashboardScreen', () => {
     mockGetTodaySummary.mockResolvedValueOnce(baseSummary);
 
     const onScanMeal = jest.fn();
-    const { findByTestId, getByTestId } = render(<DashboardScreen onScanMeal={onScanMeal} />);
+    const { findByTestId, getByTestId } = render(
+      <DashboardScreen onScanMeal={onScanMeal} onOpenSettings={jest.fn()} />,
+    );
     await findByTestId('dashboard-screen');
 
     fireEvent.press(getByTestId('scan-meal-button'));
     expect(onScanMeal).toHaveBeenCalled();
   });
 
+  it('calls onOpenSettings when the My Proteins link is pressed', async () => {
+    mockGetTodaySummary.mockResolvedValueOnce(baseSummary);
+
+    const onOpenSettings = jest.fn();
+    const { findByTestId, getByTestId } = render(
+      <DashboardScreen onScanMeal={jest.fn()} onOpenSettings={onOpenSettings} />,
+    );
+    await findByTestId('dashboard-screen');
+
+    fireEvent.press(getByTestId('open-settings-button'));
+    expect(onOpenSettings).toHaveBeenCalled();
+  });
+
   it('does not show a recommendation card when there is no recommendation', async () => {
     mockGetTodaySummary.mockResolvedValueOnce(baseSummary);
     mockGetCurrentRecommendation.mockResolvedValueOnce({ recommendation: null });
 
-    const { findByTestId, queryByTestId } = render(<DashboardScreen onScanMeal={jest.fn()} />);
+    const { findByTestId, queryByTestId } = render(
+      <DashboardScreen onScanMeal={jest.fn()} onOpenSettings={jest.fn()} />,
+    );
     await findByTestId('dashboard-screen');
 
     expect(queryByTestId('recommendation-card')).toBeNull();
@@ -91,13 +110,13 @@ describe('DashboardScreen', () => {
         type: 'addition',
         proteinType: 'eggs',
         proteinLabel: 'Eggs',
-        source: 'history',
-        message: 'Add some eggs — you had it Tuesday.',
+        source: 'inferred',
+        message: 'Add some eggs — you\'ve been eating it often lately.',
         remainingProteinG: 20,
       },
     });
 
-    const { findByTestId } = render(<DashboardScreen onScanMeal={jest.fn()} />);
+    const { findByTestId } = render(<DashboardScreen onScanMeal={jest.fn()} onOpenSettings={jest.fn()} />);
     const card = await findByTestId('recommendation-card');
     expect(card).toBeTruthy();
   });
@@ -114,14 +133,68 @@ describe('DashboardScreen', () => {
         remainingProteinG: 20,
       },
     });
-    mockDismissRecommendation.mockResolvedValueOnce({ success: true });
+    mockDismissRecommendation.mockResolvedValueOnce({ success: true, suggestFrequencyPrompt: false });
 
-    const { findByTestId, getByTestId, queryByTestId } = render(<DashboardScreen onScanMeal={jest.fn()} />);
+    const { findByTestId, getByTestId, queryByTestId } = render(
+      <DashboardScreen onScanMeal={jest.fn()} onOpenSettings={jest.fn()} />,
+    );
     await findByTestId('recommendation-card');
 
     fireEvent.press(getByTestId('dismiss-recommendation-button'));
 
     await waitFor(() => expect(mockDismissRecommendation).toHaveBeenCalledWith('eggs'));
     await waitFor(() => expect(queryByTestId('recommendation-card')).toBeNull());
+  });
+
+  it('shows a repeated-dismissal prompt when the backend suggests one', async () => {
+    mockGetTodaySummary.mockResolvedValueOnce(baseSummary);
+    mockGetCurrentRecommendation.mockResolvedValueOnce({
+      recommendation: {
+        type: 'addition',
+        proteinType: 'eggs',
+        proteinLabel: 'Eggs',
+        source: 'default',
+        message: 'Add some eggs to help hit your protein target today.',
+        remainingProteinG: 20,
+      },
+    });
+    mockDismissRecommendation.mockResolvedValueOnce({ success: true, suggestFrequencyPrompt: true });
+
+    const { findByTestId, getByTestId } = render(
+      <DashboardScreen onScanMeal={jest.fn()} onOpenSettings={jest.fn()} />,
+    );
+    await findByTestId('recommendation-card');
+
+    fireEvent.press(getByTestId('dismiss-recommendation-button'));
+
+    expect(await findByTestId('frequency-prompt')).toBeTruthy();
+  });
+
+  it('opens settings and clears the prompt when "Adjust" is pressed', async () => {
+    mockGetTodaySummary.mockResolvedValueOnce(baseSummary);
+    mockGetCurrentRecommendation.mockResolvedValueOnce({
+      recommendation: {
+        type: 'addition',
+        proteinType: 'eggs',
+        proteinLabel: 'Eggs',
+        source: 'default',
+        message: 'Add some eggs to help hit your protein target today.',
+        remainingProteinG: 20,
+      },
+    });
+    mockDismissRecommendation.mockResolvedValueOnce({ success: true, suggestFrequencyPrompt: true });
+
+    const onOpenSettings = jest.fn();
+    const { findByTestId, getByTestId, queryByTestId } = render(
+      <DashboardScreen onScanMeal={jest.fn()} onOpenSettings={onOpenSettings} />,
+    );
+    await findByTestId('recommendation-card');
+    fireEvent.press(getByTestId('dismiss-recommendation-button'));
+    await findByTestId('frequency-prompt');
+
+    fireEvent.press(getByTestId('adjust-frequency-button'));
+
+    expect(onOpenSettings).toHaveBeenCalled();
+    expect(queryByTestId('frequency-prompt')).toBeNull();
   });
 });

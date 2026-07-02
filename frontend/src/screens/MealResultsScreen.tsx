@@ -4,7 +4,7 @@ import { getDishMacros, logMeal, type Macros, type ScanResult, type ScannedDish 
 
 interface Props {
   scanResult: ScanResult;
-  onLogged: () => void;
+  onLogged: (result: { showSettingsNudge: boolean }) => void;
 }
 
 type OilLevel = 'low' | 'medium' | 'high';
@@ -97,8 +97,8 @@ export default function MealResultsScreen({ scanResult, onLogged }: Props) {
         ? { manual: true }
         : { dishes: scanResult.dishes.map((dish) => ({ label: dish.label, portionMultiplier: dish.portionMultiplier })) };
 
-      await logMeal({ dishLabels, portionEstimate, macros });
-      onLogged();
+      const result = await logMeal({ dishLabels, portionEstimate, macros });
+      onLogged({ showSettingsNudge: result.showSettingsNudge });
     } catch {
       setError("Couldn't log this meal. Please try again.");
     } finally {

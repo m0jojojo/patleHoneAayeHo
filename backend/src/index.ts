@@ -8,6 +8,7 @@ import { registerOnboardingRoutes } from "./onboarding/routes";
 import { registerNutritionRoutes } from "./nutrition/routes";
 import { registerMealRoutes } from "./meals/routes";
 import { registerRecommendationRoutes } from "./recommendations/routes";
+import { registerSettingsRoutes } from "./settings/routes";
 
 const app = new Hono<AuthEnv>();
 
@@ -52,5 +53,6 @@ registerOnboardingRoutes(app);
 registerNutritionRoutes(app);
 registerMealRoutes(app);
 registerRecommendationRoutes(app);
+registerSettingsRoutes(app);
 
 export default app;

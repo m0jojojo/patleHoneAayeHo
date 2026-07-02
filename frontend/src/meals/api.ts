@@ -68,7 +68,7 @@ export function logMeal(input: {
   dishLabels: string[];
   portionEstimate: unknown;
   macros: Macros;
-}): Promise<{ id: string }> {
+}): Promise<{ id: string; showSettingsNudge: boolean }> {
   return authedRequest('/meals/log', { method: 'POST', body: JSON.stringify(input) });
 }
 

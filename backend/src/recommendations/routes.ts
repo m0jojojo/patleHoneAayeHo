@@ -3,7 +3,7 @@ import { HttpError } from "../auth/errors";
 import type { AuthEnv } from "../auth/middleware";
 import { requireSession } from "../auth/middleware";
 import { isValidProteinId } from "../onboarding/constants";
-import { recordDismissal } from "./dismiss";
+import { countDismissalsSinceLastAccepted, recordDismissal, REPEATED_DISMISSAL_THRESHOLD } from "./dismiss";
 import { getProteinGapRecommendation } from "./recommend";
 
 export function registerRecommendationRoutes(app: Hono<AuthEnv>): void {
@@ -18,7 +18,12 @@ export function registerRecommendationRoutes(app: Hono<AuthEnv>): void {
 			throw new HttpError(400, "proteinType must be a known protein id");
 		}
 
-		await recordDismissal(c.env.DB, c.get("user").id, body.proteinType);
-		return c.json({ success: true });
+		const userId = c.get("user").id;
+		await recordDismissal(c.env.DB, userId, body.proteinType);
+
+		const consecutiveDismissals = await countDismissalsSinceLastAccepted(c.env.DB, userId, body.proteinType);
+		const suggestFrequencyPrompt = consecutiveDismissals >= REPEATED_DISMISSAL_THRESHOLD;
+
+		return c.json({ success: true, suggestFrequencyPrompt });
 	});
 }
