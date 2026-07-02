@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { getSessionToken } from './src/auth/session';
 import { getOnboardingStatus } from './src/onboarding/api';
 import App from './App';
@@ -76,5 +76,22 @@ describe('App', () => {
     });
     const { findByTestId } = render(<App />);
     expect(await findByTestId('home-screen')).toBeTruthy();
+  });
+
+  it('navigates from home to the meal scan screen', async () => {
+    mockGetSessionToken.mockResolvedValueOnce('a-token');
+    mockGetOnboardingStatus.mockResolvedValueOnce({
+      goal: 'lose_weight',
+      dietType: 'vegetarian',
+      proteinPreferences: ['paneer'],
+      bodyStats: { height: 170, weight: 65, age: 35, activityLevel: 'moderate', sex: 'female' },
+      completed: true,
+    });
+    const { findByTestId, getByTestId } = render(<App />);
+    await findByTestId('home-screen');
+
+    fireEvent.press(getByTestId('scan-meal-button'));
+
+    await waitFor(() => expect(getByTestId('meal-scan-screen')).toBeTruthy());
   });
 });

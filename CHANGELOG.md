@@ -23,3 +23,9 @@ Plain-English, one line per phase.
   varies a lot), and added the math that turns a user's profile into a daily calorie/protein/carb/
   fat target — building muscle vs. losing weight now produce different targets even at the same
   energy level.
+- **Phase 6 — Meal Scanning**: users can now photograph (or pick from their gallery) a meal and
+  get back an editable calorie/protein/carb/fat breakdown before logging it — corrections you make
+  are what actually get saved. If a dish's macros depend a lot on how much oil/ghee was used and
+  we're not confident, the app asks instead of guessing. Photo identification (Gemini, chosen as
+  the vision provider) is stubbed for now, same as OTP delivery was in Phase 3, until a real API
+  key is wired up.

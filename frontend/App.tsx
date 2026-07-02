@@ -1,12 +1,15 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { getSessionToken, saveSessionToken } from './src/auth/session';
+import type { ScanResult } from './src/meals/api';
 import { getOnboardingStatus, type OnboardingStatus } from './src/onboarding/api';
 import type { DietType } from './src/onboarding/constants';
 import BodyStatsScreen from './src/screens/BodyStatsScreen';
 import DietTypeScreen from './src/screens/DietTypeScreen';
 import GoalScreen from './src/screens/GoalScreen';
+import MealResultsScreen from './src/screens/MealResultsScreen';
+import MealScanScreen from './src/screens/MealScanScreen';
 import OnboardingCompleteScreen from './src/screens/OnboardingCompleteScreen';
 import OtpEntryScreen from './src/screens/OtpEntryScreen';
 import PhoneEntryScreen from './src/screens/PhoneEntryScreen';
@@ -22,7 +25,9 @@ type Step =
   | { screen: 'proteinPreferences'; dietType: DietType }
   | { screen: 'bodyStats' }
   | { screen: 'onboardingComplete' }
-  | { screen: 'home' };
+  | { screen: 'home' }
+  | { screen: 'mealScan' }
+  | { screen: 'mealResults'; scanResult: ScanResult };
 
 // Determines where a signed-in user should resume, so backing out mid-onboarding and
 // returning picks up where they left off instead of restarting from Screen 1.
@@ -133,9 +138,30 @@ export default function App() {
     );
   }
 
+  if (step.screen === 'mealScan') {
+    return (
+      <>
+        <MealScanScreen onScanned={(scanResult) => setStep({ screen: 'mealResults', scanResult })} />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
+  if (step.screen === 'mealResults') {
+    return (
+      <>
+        <MealResultsScreen scanResult={step.scanResult} onLogged={() => setStep({ screen: 'home' })} />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
   return (
     <View style={styles.container} testID="home-screen">
       <Text>You're all set.</Text>
+      <Pressable testID="scan-meal-button" style={styles.button} onPress={() => setStep({ screen: 'mealScan' })}>
+        <Text style={styles.buttonText}>Scan a meal</Text>
+      </Pressable>
       <StatusBar style="auto" />
     </View>
   );
@@ -147,5 +173,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 16,
   },
+  button: { backgroundColor: '#111', borderRadius: 8, paddingVertical: 14, paddingHorizontal: 24 },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

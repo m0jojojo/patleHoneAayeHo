@@ -6,12 +6,13 @@ import { requestOtp, verifyOtp } from "./auth/otp";
 import { createSession } from "./auth/session";
 import { registerOnboardingRoutes } from "./onboarding/routes";
 import { registerNutritionRoutes } from "./nutrition/routes";
+import { registerMealRoutes } from "./meals/routes";
 
 const app = new Hono<AuthEnv>();
 
 app.onError((err, c) => {
 	if (err instanceof HttpError) {
-		return c.json({ error: err.message }, err.status as 400 | 401 | 429);
+		return c.json({ error: err.message }, err.status as 400 | 401 | 404 | 429);
 	}
 	console.error(err);
 	return c.json({ error: "Internal error" }, 500);
@@ -48,5 +49,6 @@ app.get("/auth/me", requireSession, (c) => {
 
 registerOnboardingRoutes(app);
 registerNutritionRoutes(app);
+registerMealRoutes(app);
 
 export default app;

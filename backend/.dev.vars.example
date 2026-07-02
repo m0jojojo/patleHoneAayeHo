@@ -1,9 +1,10 @@
 # Copy this file to .dev.vars for local development (that file is gitignored).
 # In production, set these as Worker secrets: `wrangler secret put <NAME>`.
 
-# Vision API (dish identification + portion estimation) — see Phase 6.
-# Provider choice (Gemini vs GPT-4V) is documented in docs/meal-scanning.md once Phase 6 lands.
-VISION_API_KEY=
+# Vision API (dish identification + portion estimation) — Gemini was chosen, see
+# docs/meal-scanning.md for why and how to swap providers. Not used yet: vision calls are
+# stubbed (backend/src/vision/provider.ts) until this is actually wired up and a real key is set.
+GEMINI_API_KEY=
 
 # Razorpay (UPI payments) — wired up in Phase 10, scaffolded here so the shape exists early.
 RAZORPAY_KEY_ID=
