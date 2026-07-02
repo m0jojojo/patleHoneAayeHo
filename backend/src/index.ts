@@ -7,6 +7,7 @@ import { createSession } from "./auth/session";
 import { registerOnboardingRoutes } from "./onboarding/routes";
 import { registerNutritionRoutes } from "./nutrition/routes";
 import { registerMealRoutes } from "./meals/routes";
+import { registerRecommendationRoutes } from "./recommendations/routes";
 
 const app = new Hono<AuthEnv>();
 
@@ -50,5 +51,6 @@ app.get("/auth/me", requireSession, (c) => {
 registerOnboardingRoutes(app);
 registerNutritionRoutes(app);
 registerMealRoutes(app);
+registerRecommendationRoutes(app);
 
 export default app;

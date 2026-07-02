@@ -23,12 +23,13 @@ describe("migrations", () => {
 		"meals_logged",
 		"otp_requests",
 		"protein_preferences",
+		"recommendation_dismissals",
 		"sessions",
 		"usual_meals",
 		"users",
 	].sort();
 
-	it("registers all ten expected migrations in order", () => {
+	it("registers all eleven expected migrations in order", () => {
 		expect(migrations.map((m) => m.id)).toEqual([
 			"0001_create_users",
 			"0002_create_protein_preferences",
@@ -40,6 +41,7 @@ describe("migrations", () => {
 			"0008_add_sex_to_users",
 			"0009_create_dishes",
 			"0010_add_dish_labels_to_usual_meals",
+			"0011_create_recommendation_dismissals",
 		]);
 	});
 
@@ -167,8 +169,18 @@ describe("migrations", () => {
 	it("rolls back only the most recently applied migration by default", async () => {
 		await migrateUp(env.DB, migrations);
 		const reverted = await migrateDown(env.DB, migrations);
-		expect(reverted).toEqual(["0010_add_dish_labels_to_usual_meals"]);
-		expect(await columnNames(env.DB, "usual_meals")).not.toContain("dish_labels");
+		expect(reverted).toEqual(["0011_create_recommendation_dismissals"]);
+		expect(await tableNames(env.DB)).not.toContain("recommendation_dismissals");
+	});
+
+	it("produces the expected columns for recommendation_dismissals", async () => {
+		await migrateUp(env.DB, migrations);
+		expect(await columnNames(env.DB, "recommendation_dismissals")).toEqual([
+			"id",
+			"user_id",
+			"protein_type",
+			"dismissed_at",
+		]);
 	});
 
 	it("can be re-applied after a full rollback with no leftover state", async () => {

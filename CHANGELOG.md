@@ -34,3 +34,8 @@ Plain-English, one line per phase.
   today. Behind the scenes, every logged meal quietly builds a "usual meals" list (which
   combinations of dishes you eat, and how often) that Phase 8 will use to recommend additions from
   food you already eat.
+- **Phase 8 — Protein Gap Recommendations**: when you're 15g+ short on protein for the day (and
+  it's not too late in the day), the dashboard now suggests adding something — always something
+  you already eat, never a new food and never a "swap." It prefers what you've told us directly,
+  then what you actually tend to log, then falls back to whatever you picked at onboarding. You
+  can dismiss a suggestion, which is quietly noted for Phase 9 to learn from.

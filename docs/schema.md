@@ -11,6 +11,7 @@ erDiagram
     users ||--o{ usual_meals : "builds"
     users ||--o{ otp_requests : "requests (by phone number)"
     users ||--o{ sessions : "has"
+    users ||--o{ recommendation_dismissals : "dismisses"
 
     users {
         TEXT id PK
@@ -83,6 +84,13 @@ erDiagram
         REAL oil_variance_medium_tsp
         REAL oil_variance_high_tsp
     }
+
+    recommendation_dismissals {
+        TEXT id PK
+        TEXT user_id FK
+        TEXT protein_type
+        TEXT dismissed_at
+    }
 ```
 
 ## Tables, in plain English
@@ -142,6 +150,14 @@ to the client — the plaintext token is never stored. `expires_at` is 30 days f
 
 The nutrition catalog (Phase 5) — see [docs/nutrition-engine.md](nutrition-engine.md) for the full
 explanation of the base-macros-plus-oil-variance model and how to add a new dish.
+
+### `recommendation_dismissals`
+
+Every time a user dismisses a protein-gap recommendation (Phase 8), logged here with which
+protein and when. Doesn't affect the current recommendation — it exists purely as input for
+Phase 9's passive learning (repeated dismissals of the same protein should eventually prompt the
+user to adjust that protein's frequency setting). See
+[docs/recommendation-engine.md](recommendation-engine.md).
 
 ## Migrations
 
