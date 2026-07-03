@@ -3,6 +3,7 @@ import { HttpError } from "../auth/errors";
 import type { AuthEnv } from "../auth/middleware";
 import { requireSession } from "../auth/middleware";
 import { calculateDishMacros, getDishByName, type OilLevel } from "../nutrition/dishes";
+import { createVisionProvider } from "../vision/provider";
 import { logMeal, validateLogMealInput } from "./log";
 import { scanMeal } from "./scan";
 import { getTodaySummary } from "./today";
@@ -21,7 +22,9 @@ export function registerMealRoutes(app: Hono<AuthEnv>): void {
 			throw new HttpError(400, "imageBase64 is required");
 		}
 
-		const result = await scanMeal(c.env.DB, body.imageBase64);
+		const result = await scanMeal(c.env.DB, body.imageBase64, {
+			visionProvider: createVisionProvider(c.env.GEMINI_API_KEY),
+		});
 		return c.json(result);
 	});
 

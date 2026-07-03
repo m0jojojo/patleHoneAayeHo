@@ -35,7 +35,10 @@ function wranglerD1Execute({ sql, file, remote }) {
 	if (sql) args.push("--command", sql);
 
 	const output = execFileSync(process.execPath, [WRANGLER_BIN, ...args], { encoding: "utf-8" });
-	return JSON.parse(output);
+	// `--remote` prints upload/progress lines (e.g. "├ Checking if file needs uploading") before
+	// the JSON result, which `--local` doesn't - strip anything before the JSON array starts.
+	const jsonStart = output.indexOf("[");
+	return JSON.parse(jsonStart === -1 ? output : output.slice(jsonStart));
 }
 
 function ensureMigrationsTable(remote) {

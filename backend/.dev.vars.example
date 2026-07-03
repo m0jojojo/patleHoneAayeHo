@@ -2,14 +2,21 @@
 # In production, set these as Worker secrets: `wrangler secret put <NAME>`.
 
 # Vision API (dish identification + portion estimation) — Gemini was chosen, see
-# docs/meal-scanning.md for why and how to swap providers. Not used yet: vision calls are
-# stubbed (backend/src/vision/provider.ts) until this is actually wired up and a real key is set.
+# docs/meal-scanning.md for why. When set, /meals/scan calls Gemini's generateContent endpoint
+# (backend/src/vision/gemini.ts) instead of the deterministic stub. Get a free-tier key from
+# https://aistudio.google.com/apikey. In production, set via `wrangler secret put GEMINI_API_KEY`.
 GEMINI_API_KEY=
 
 # Razorpay (UPI payments) — wired up in Phase 10, scaffolded here so the shape exists early.
 RAZORPAY_KEY_ID=
 RAZORPAY_KEY_SECRET=
 RAZORPAY_WEBHOOK_SECRET=
+
+# MSG91 (real OTP SMS delivery, see docs/auth.md) — when set, requestOtp sends a real text via
+# MSG91 instead of logging the code to the console. Get this from your MSG91 dashboard
+# (Settings -> API Keys) after signing up at https://msg91.com. In production, set via
+# `wrangler secret put MSG91_AUTH_KEY`, not this file.
+MSG91_AUTH_KEY=
 
 # D1 (SQLite at the edge) is bound in wrangler.jsonc via the `d1_databases` config,
 # not via an env var/connection string — no DB credential belongs here.

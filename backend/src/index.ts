@@ -3,6 +3,7 @@ import { HttpError } from "./auth/errors";
 import type { AuthEnv } from "./auth/middleware";
 import { requireSession } from "./auth/middleware";
 import { requestOtp, verifyOtp } from "./auth/otp";
+import { createSendOtp } from "./auth/send-otp";
 import { createSession } from "./auth/session";
 import { registerOnboardingRoutes } from "./onboarding/routes";
 import { registerNutritionRoutes } from "./nutrition/routes";
@@ -28,7 +29,7 @@ app.post("/auth/otp/request", async (c) => {
 		throw new HttpError(400, "phoneNumber is required");
 	}
 
-	await requestOtp(c.env.DB, body.phoneNumber);
+	await requestOtp(c.env.DB, body.phoneNumber, { sendOtp: createSendOtp(c.env.MSG91_AUTH_KEY) });
 	return c.json({ success: true });
 });
 

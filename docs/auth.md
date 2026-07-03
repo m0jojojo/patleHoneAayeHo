@@ -56,19 +56,30 @@ sequenceDiagram
 Phone numbers must be in E.164 format (e.g. `+919876543210`) — validated both client- and
 server-side.
 
-## How OTP delivery works right now
+## How OTP delivery works
 
-No SMS provider is wired up yet. `POST /auth/otp/request` generates and stores the code exactly as
-it would in production, but instead of sending an SMS it logs the code server-side:
+**MSG91** is wired up as the real SMS provider (`backend/src/auth/msg91.ts`), chosen specifically
+because it reliably delivers to Indian numbers without needing a separate DLT-registered sender
+template for OTP-specific messages — many international routes (Twilio included) are commonly
+blocked by Indian carriers for exactly this reason.
 
-```
-[otp] +919876543210 -> 482913 (expires in 5m)
-```
+It's **on/off based on whether `MSG91_AUTH_KEY` is set** (`backend/src/auth/send-otp.ts`):
 
-This is visible in the `wrangler dev` terminal (or the Worker's logs once deployed), so the full
-flow is testable end to end locally. To wire up a real provider later, replace the `sendOtp`
-default in `backend/src/auth/otp.ts` — nothing else in the flow needs to change (the function
-signature already separates "generate + store the OTP" from "deliver the OTP").
+- **Not set** (local dev by default) — falls back to logging the code server-side instead:
+  ```
+  [otp] +919876543210 -> 482913 (expires in 5m)
+  ```
+  visible in the `wrangler dev` terminal, so the full flow is testable end to end without any
+  account.
+- **Set** (production, via `wrangler secret put MSG91_AUTH_KEY`) — sends a real SMS via MSG91's
+  OTP API (`https://control.msg91.com/api/v5/otp`), using our own already-generated/hashed code
+  (MSG91 is purely the delivery channel; our own `auth/otp.ts` still owns generation, hashing,
+  rate-limiting, and verification). If the MSG91 call itself fails for any reason, it logs the
+  code as a fallback instead of failing the request outright — the OTP is already stored, so it can
+  still be relayed manually if needed.
+
+Get an MSG91 auth key from your dashboard (Settings → API Keys) after signing up at
+[msg91.com](https://msg91.com); local dev keys go in `backend/.dev.vars` (gitignored).
 
 ## Security notes
 

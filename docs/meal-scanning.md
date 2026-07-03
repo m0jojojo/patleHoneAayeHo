@@ -22,37 +22,38 @@ If the vision provider itself fails or times out, `/meals/scan` still returns `2
 `visionFailed: true` and an empty dish list — the app falls back to a manual-entry form rather
 than crashing or showing a raw error.
 
-## Vision provider: Gemini (currently stubbed)
+## Vision provider: Gemini
 
-**Chosen: Gemini 1.5/2.0 Flash** (per the brief's either/or). Reasoning: generous free tier,
-strong multimodal (image) support, and Cloudflare Workers can call it directly over `fetch` with
-no SDK — no extra dependency needed for a Workers-compatible client.
+**Chosen: Gemini 2.5 Flash** (per the brief's either/or; not 1.5-flash, which has been retired by
+Google, and not 2.0-flash, where some Google accounts see a 0-quota free tier until it's separately
+enabled). Reasoning: generous free tier, strong
+multimodal (image) support, and Cloudflare Workers can call it directly over `fetch` with no SDK —
+no extra dependency needed for a Workers-compatible client.
 
-**Currently stubbed, not actually wired up** (`backend/src/vision/provider.ts`) — no Gemini
-account/API key exists yet, so `stubVisionProvider` returns a fixed, deterministic result (no
-network call, no cost). This mirrors how OTP delivery was stubbed in Phase 3: the real
-integration point is isolated behind one function so swapping it in later doesn't touch any
-calling code.
+It's **on/off based on whether `GEMINI_API_KEY` is set** (`backend/src/vision/provider.ts`'s
+`createVisionProvider`), mirroring how MSG91 was wired up for OTP delivery (see
+[docs/auth.md](auth.md)):
 
-### Swapping in a real provider later
+- **Not set** (local dev by default) — `/meals/scan` uses `stubVisionProvider`
+  (`backend/src/vision/provider.ts`), a fixed, deterministic result (no network call, no cost), so
+  the full flow is testable end to end without a Gemini account.
+- **Set** (production, via `wrangler secret put GEMINI_API_KEY`) — `scanWithGemini`
+  (`backend/src/vision/gemini.ts`) POSTs the photo (base64 JPEG) and a prompt to Gemini's
+  `generateContent` endpoint, listing the known `dishes.name` catalog values by name and asking for
+  a JSON reply matching `{ dishes: [{ label, confidence, portionMultiplier }] }`. A label outside
+  that list isn't an error — it just comes back `matched: false` from `scanMeal`, same as today's
+  stub behavior for unrecognized dishes.
 
-1. Get a Gemini API key, add it to `backend/.dev.vars` as `GEMINI_API_KEY` (already scaffolded in
-   `.dev.vars.example`).
-2. Implement a new function matching the `VisionProvider` type (`backend/src/vision/provider.ts`):
-   ```ts
-   export const geminiVisionProvider: VisionProvider = async (imageBase64) => {
-     // POST to Gemini's generateContent endpoint with the image + a prompt asking for
-     // { dishes: [{ label, confidence, portionMultiplier }] } — parse the JSON response into
-     // this shape. `label` must match (or be mapped to) a `dishes.name` row to be recognized.
-   };
-   ```
-3. Swap the default in `backend/src/meals/scan.ts` (`options.visionProvider ?? stubVisionProvider`)
-   to the new function once it's tested.
-4. Nothing else changes — `scanMeal`'s confidence/disambiguation/macro logic, the three
-   `/meals/*` endpoints, and the frontend are all provider-agnostic.
+If the Gemini call itself throws (bad key, timeout, malformed response), `scanMeal`'s existing
+try/catch already handles it — the caller gets `visionFailed: true` and falls back to manual entry,
+never a raw error.
+
+Get a free-tier Gemini API key from [aistudio.google.com/apikey](https://aistudio.google.com/apikey);
+local dev keys go in `backend/.dev.vars` (gitignored).
 
 Swapping to GPT-4V instead would mean writing a different function with the same `VisionProvider`
-signature — the rest of the app wouldn't need to change either way.
+signature — the rest of the app (confidence/disambiguation/macro logic, the three `/meals/*`
+endpoints, and the frontend) wouldn't need to change either way.
 
 ## Confidence and disambiguation
 

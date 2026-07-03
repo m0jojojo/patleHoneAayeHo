@@ -46,3 +46,10 @@ Plain-English, one line per phase.
   guessing blindly. After your first logged meal, a skippable prompt points you to that settings
   screen. Dismiss the same suggestion 3 times in a row and the dashboard offers to help you adjust
   it directly, instead of keep suggesting something you clearly don't want.
+- **Real-world testing setup (Phases 10/11 skipped for now)**: got the app ready for multi-day
+  testing on a phone that isn't tethered to a laptop. Text messages for the login code now really
+  send (via MSG91) instead of only showing up in a developer log. The backend now runs on
+  Cloudflare's real servers with a real database, not just on one laptop. Built a standalone
+  installable app (no dev tools required to run it) and pointed it at that real backend. Photo
+  identification now actually calls Gemini to recognize the dish in the photo, instead of always
+  guessing the same "roti and dal" regardless of what's on the plate.

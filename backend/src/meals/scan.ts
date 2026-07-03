@@ -38,7 +38,8 @@ export async function scanMeal(
 	let visionResult;
 	try {
 		visionResult = await visionProvider(imageBase64);
-	} catch {
+	} catch (error) {
+		console.error("Vision provider failed:", error);
 		return { visionFailed: true, dishes: [] };
 	}
 

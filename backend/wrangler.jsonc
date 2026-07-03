@@ -6,12 +6,13 @@
 		"enabled": true,
 	},
 	// For local dev, "wrangler dev" creates a local SQLite file from this binding regardless of database_id.
-	// Before deploying to production, run `wrangler d1 create ingredient-first-db` and replace database_id below.
+	// database_id below is the real production D1 database (APAC region) - `wrangler dev` (no
+	// --remote) still uses a local file; only `--remote`/`wrangler deploy` touch the real one.
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "ingredient-first-db",
-			"database_id": "local-dev-placeholder",
+			"database_id": "981e8b3f-8a3f-4a4c-8391-be1f5e5f2a4d",
 		},
 	],
 	// Lets migration .sql files be imported as raw text (see src/db/migrations.ts).
