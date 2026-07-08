@@ -39,10 +39,11 @@ It's **on/off based on whether `GEMINI_API_KEY` is set** (`backend/src/vision/pr
   the full flow is testable end to end without a Gemini account.
 - **Set** (production, via `wrangler secret put GEMINI_API_KEY`) — `scanWithGemini`
   (`backend/src/vision/gemini.ts`) POSTs the photo (base64 JPEG) and a prompt to Gemini's
-  `generateContent` endpoint, listing the known `dishes.name` catalog values by name and asking for
-  a JSON reply matching `{ dishes: [{ label, confidence, portionMultiplier }] }`. A label outside
-  that list isn't an error — it just comes back `matched: false` from `scanMeal`, same as today's
-  stub behavior for unrecognized dishes.
+  `generateContent` endpoint, listing the known `dishes.name` catalog values by name and asking it
+  to identify every distinct item (counting duplicates rather than describing them collectively),
+  preferring the exact catalog name only when it's genuinely that dish, and to always include its
+  own best-effort `estimatedMacros` for the whole visible quantity of each item. A label outside the
+  catalog isn't an error — it just comes back `matched: false` from `scanMeal`.
 
 If the Gemini call itself throws (bad key, timeout, malformed response), `scanMeal`'s existing
 try/catch already handles it — the caller gets `visionFailed: true` and falls back to manual entry,
@@ -73,8 +74,26 @@ the real macros for that answer (reusing Phase 5's `calculateDishMacros`).
 Low-confidence dishes with *no* oil variance (a blurry photo of a boiled egg, say) still get a
 macro estimate — there's nothing to disambiguate since there's only one plausible value.
 
-An unrecognized dish label (not in the `dishes` catalog at all) is marked `matched: false` with no
-macros — shown to the user as "couldn't match," not silently dropped or crashed on.
+## Unmatched dishes: the vision provider's own macro estimate as a fallback
+
+An unrecognized dish label (not in the `dishes` catalog at all) is marked `matched: false`. Rather
+than showing a bare zero, `scanMeal` (`backend/src/meals/scan.ts`) falls back to the vision
+provider's own `estimatedMacros` for that item when one was supplied — Gemini already has a
+reasonable sense of a common food's macros without needing a database lookup, and this covers the
+huge long tail of dishes too specific or too varied to ever fully catalog (parathas, chutneys,
+regional variants, raw ingredients, etc.).
+
+Every `DishScanResult` carries a `macrosSource`: `"catalog"` (looked up from the nutrition
+database — trustworthy, and what's used for oil-variable dishes once disambiguated) or
+`"estimated"` (the vision provider's own guess, used only when there's no catalog match at all). The
+results screen labels estimated macros as "(AI estimate)" so the user knows to double-check them,
+rather than presenting a rough guess with the same confidence as a real lookup. If there's no
+catalog match *and* no estimate either, the dish still falls back to "couldn't match to a known
+dish" with an empty macro field, same as before.
+
+This is a deliberate accuracy vs. trust tradeoff: catalog-matched dishes (especially oil-variable
+ones, where getting fat/calories right depends on a confirmed cooking method) stay authoritative,
+while everything else gets a usable starting estimate instead of forcing a fully manual entry.
 
 ## Editable macro breakdown and logging
 

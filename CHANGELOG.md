@@ -53,3 +53,9 @@ Plain-English, one line per phase.
   installable app (no dev tools required to run it) and pointed it at that real backend. Photo
   identification now actually calls Gemini to recognize the dish in the photo, instead of always
   guessing the same "roti and dal" regardless of what's on the plate.
+- **Better photo recognition accuracy**: photo scanning now lists each food item separately and
+  counts duplicates (e.g. "4 eggs," not just "eggs"), and prefers specific names over generic ones.
+  Dishes that aren't in our small nutrition catalog now get a usable AI-estimated macro
+  breakdown (clearly labeled "AI estimate," still fully editable) instead of just showing zeros -
+  while dal, sabzi, and curries (where oil amount matters a lot) still go through the more
+  trustworthy catalog + confirmed-oil-level path as before.

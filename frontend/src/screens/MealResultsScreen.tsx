@@ -127,7 +127,7 @@ export default function MealResultsScreen({ scanResult, onLogged }: Props) {
           return (
             <View key={`${dish.label}-${index}`} testID={`dish-row-${index}`} style={styles.dishRow}>
               <Text style={styles.dishLabel}>{dish.label}</Text>
-              {!dish.matched ? (
+              {!dish.matched && !macros ? (
                 <Text style={styles.dishNote}>Couldn&apos;t match to a known dish.</Text>
               ) : dish.needsDisambiguation && !macros ? (
                 <>
@@ -148,7 +148,9 @@ export default function MealResultsScreen({ scanResult, onLogged }: Props) {
                   {resolvingIndex === index ? <ActivityIndicator /> : null}
                 </>
               ) : macros ? (
-                <Text style={styles.dishNote}>{Math.round(macros.calories)} kcal</Text>
+                <Text style={styles.dishNote}>
+                  {Math.round(macros.calories)} kcal{dish.macrosSource === 'estimated' ? ' (AI estimate)' : ''}
+                </Text>
               ) : null}
             </View>
           );

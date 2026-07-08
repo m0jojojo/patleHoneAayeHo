@@ -20,17 +20,37 @@ const KNOWN_DISH_NAMES = [
 	"Banana",
 ];
 
-const PROMPT = `You are looking at a photo of an Indian home-cooked meal. Identify each distinct dish on the plate.
+const PROMPT = `You are looking at a photo of Indian food. Identify every visually distinct food item -
+don't group different items together into one vague label.
 
-For each dish you recognize from this list, use its exact name: ${KNOWN_DISH_NAMES.join(", ")}.
-If a dish isn't on the list, describe it briefly in your own words instead of guessing a list item.
+Be as specific as you can (e.g. "Malabar parotta" rather than "paratha"). If several identical
+items are visible (e.g. 4 eggs, 3 rotis), that's a count, not a separate line per item.
+
+For an item that is genuinely one of these exact dishes, use its exact name so it matches our
+nutrition database: ${KNOWN_DISH_NAMES.join(", ")}. Don't force a loose match - only use one of
+these names if it's really that dish. Anything else, describe briefly in your own words.
 
 Respond with ONLY a JSON object, no markdown fences, matching this shape:
-{"dishes": [{"label": string, "confidence": number between 0 and 1, "portionMultiplier": number}]}
+{
+  "dishes": [
+    {
+      "label": string,
+      "confidence": number between 0 and 1,
+      "portionMultiplier": number,
+      "estimatedMacros": { "calories": number, "proteinG": number, "carbsG": number, "fatG": number }
+    }
+  ]
+}
 
-"portionMultiplier" is relative to a standard home portion (1 = standard, 2 = double, 0.5 = half),
-estimated from how much is visible on the plate. "confidence" reflects how sure you are of the
-dish identification itself, not the portion size.`;
+"portionMultiplier": only meaningful when "label" is one of the exact known names above - how many
+standard portions are visible (e.g. 4 eggs where a standard portion is 1 egg -> portionMultiplier
+4). Use 1 if "label" isn't one of the known names.
+
+"estimatedMacros": your own best-effort nutrition estimate for the ENTIRE visible quantity of that
+item (not per single portion) - always provide this, even for a known dish name, since it's used as
+a fallback if the name doesn't end up matching our database.
+
+"confidence" reflects how sure you are of the identification itself, not the portion/count.`;
 
 interface GeminiResponse {
 	candidates?: { content?: { parts?: { text?: string }[] } }[];

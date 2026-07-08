@@ -88,6 +88,36 @@ describe("scanMeal", () => {
 
 		expect(result.dishes[0]).toMatchObject({ label: "Pizza", matched: false, needsDisambiguation: false });
 		expect(result.dishes[0].macros).toBeUndefined();
+		expect(result.dishes[0].macrosSource).toBeUndefined();
+	});
+
+	it("falls back to the vision provider's own macro estimate for an unmatched dish", async () => {
+		const result = await scanMeal(env.DB, "fake-image", {
+			visionProvider: async () => ({
+				dishes: [
+					{
+						label: "Malabar parotta",
+						confidence: 0.8,
+						portionMultiplier: 1,
+						estimatedMacros: { calories: 300, proteinG: 6, carbsG: 40, fatG: 12 },
+					},
+				],
+			}),
+		});
+
+		expect(result.dishes[0]).toMatchObject({ label: "Malabar parotta", matched: false });
+		expect(result.dishes[0].macros).toEqual({ calories: 300, proteinG: 6, carbsG: 40, fatG: 12 });
+		expect(result.dishes[0].macrosSource).toBe("estimated");
+	});
+
+	it("marks matched, non-disambiguation dishes as catalog-sourced", async () => {
+		const result = await scanMeal(env.DB, "fake-image", {
+			visionProvider: async () => ({
+				dishes: [{ label: "White rice (cooked)", confidence: 0.95, portionMultiplier: 1 }],
+			}),
+		});
+
+		expect(result.dishes[0].macrosSource).toBe("catalog");
 	});
 
 	it("falls back gracefully (not a crash) when the vision provider throws", async () => {

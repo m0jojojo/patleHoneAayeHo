@@ -1,10 +1,15 @@
+import type { DishMacros } from "../nutrition/dishes";
 import { scanWithGemini } from "./gemini";
 
 export interface VisionDish {
 	// Must match a `dishes.name` row for nutrition lookup to succeed (see src/meals/scan.ts).
 	label: string;
 	confidence: number; // 0-1
-	portionMultiplier: number; // 1 = a standard portion
+	portionMultiplier: number; // 1 = a standard portion - only meaningful when label matches a known dish name
+	// The vision provider's own best-guess macros for the whole visible quantity (not per portion).
+	// Only used by scanMeal as a fallback when `label` doesn't match a `dishes` row - a catalog
+	// lookup is trusted over this whenever one is available.
+	estimatedMacros?: DishMacros;
 }
 
 export interface VisionResult {

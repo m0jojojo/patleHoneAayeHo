@@ -15,6 +15,11 @@ export interface DishScanResult {
 	needsDisambiguation: boolean;
 	disambiguationQuestion?: string;
 	macros?: DishMacros;
+	// "catalog" - looked up from the nutrition database (see nutrition/dishes.ts), trustworthy even
+	// for oil-variable dishes since it's paired with a confirmed oil level. "estimated" - the vision
+	// provider's own guess, used only when `label` isn't in the catalog at all - shown to the user
+	// as a rougher estimate rather than an authoritative lookup.
+	macrosSource?: "catalog" | "estimated";
 }
 
 export interface ScanResult {
@@ -55,6 +60,8 @@ export async function scanMeal(
 				confidence: item.confidence,
 				portionMultiplier: item.portionMultiplier,
 				needsDisambiguation: false,
+				macros: item.estimatedMacros,
+				macrosSource: item.estimatedMacros ? "estimated" : undefined,
 			});
 			continue;
 		}
@@ -72,6 +79,7 @@ export async function scanMeal(
 			macros: needsDisambiguation
 				? undefined
 				: calculateDishMacros(dishRow, { portionMultiplier: item.portionMultiplier }),
+			macrosSource: needsDisambiguation ? undefined : "catalog",
 		});
 	}
 

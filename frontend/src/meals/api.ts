@@ -43,6 +43,7 @@ export interface ScannedDish {
   needsDisambiguation: boolean;
   disambiguationQuestion?: string;
   macros?: Macros;
+  macrosSource?: 'catalog' | 'estimated';
 }
 
 export interface ScanResult {

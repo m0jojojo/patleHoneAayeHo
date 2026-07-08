@@ -38,6 +38,36 @@ describe("scanWithGemini", () => {
 		expect(result).toEqual({ dishes: [{ label: "Chicken curry", confidence: 0.88, portionMultiplier: 1.5 }] });
 	});
 
+	it("parses estimatedMacros through into the result untouched", async () => {
+		const geminiReply = {
+			candidates: [
+				{
+					content: {
+						parts: [
+							{
+								text: JSON.stringify({
+									dishes: [
+										{
+											label: "Malabar parotta",
+											confidence: 0.8,
+											portionMultiplier: 1,
+											estimatedMacros: { calories: 300, proteinG: 6, carbsG: 40, fatG: 12 },
+										},
+									],
+								}),
+							},
+						],
+					},
+				},
+			],
+		};
+		global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(geminiReply), { status: 200 }));
+
+		const result = await scanWithGemini("test-api-key", "base64imagedata");
+
+		expect(result.dishes[0].estimatedMacros).toEqual({ calories: 300, proteinG: 6, carbsG: 40, fatG: 12 });
+	});
+
 	it("throws when Gemini responds with a non-2xx status", async () => {
 		global.fetch = vi.fn().mockResolvedValue(new Response("bad request", { status: 400 }));
 

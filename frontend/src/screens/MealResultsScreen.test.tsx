@@ -63,6 +63,45 @@ describe('MealResultsScreen', () => {
     expect(getByTestId('calories-input').props.value).toBe('228');
   });
 
+  it('pre-fills and labels macros from the AI estimate for an unmatched dish', async () => {
+    const scanResult: ScanResult = {
+      visionFailed: false,
+      dishes: [
+        {
+          label: 'Malabar parotta',
+          matched: false,
+          confidence: 0.8,
+          portionMultiplier: 1,
+          needsDisambiguation: false,
+          macros: { calories: 300, proteinG: 6, carbsG: 40, fatG: 12 },
+          macrosSource: 'estimated',
+        },
+      ],
+    };
+
+    const { getByTestId, getByText } = render(<MealResultsScreen scanResult={scanResult} onLogged={jest.fn()} />);
+    expect(getByTestId('calories-input').props.value).toBe('300');
+    expect(getByText('300 kcal (AI estimate)')).toBeTruthy();
+  });
+
+  it("shows 'couldn't match' only when there's no AI estimate either", async () => {
+    const scanResult: ScanResult = {
+      visionFailed: false,
+      dishes: [
+        {
+          label: 'Something unrecognizable',
+          matched: false,
+          confidence: 0.3,
+          portionMultiplier: 1,
+          needsDisambiguation: false,
+        },
+      ],
+    };
+
+    const { getByText } = render(<MealResultsScreen scanResult={scanResult} onLogged={jest.fn()} />);
+    expect(getByText("Couldn't match to a known dish.")).toBeTruthy();
+  });
+
   it('shows a disambiguation picker instead of macros for a low-confidence dish, then resolves it', async () => {
     const scanResult: ScanResult = {
       visionFailed: false,
