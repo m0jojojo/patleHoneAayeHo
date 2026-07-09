@@ -98,15 +98,26 @@ while everything else gets a usable starting estimate instead of forcing a fully
 ## Editable macro breakdown and logging
 
 The results screen always shows the (possibly multi-dish) macro breakdown as **editable** number
-fields, pre-filled with the computed sum across all identified dishes. `POST /meals/log` saves
-exactly whatever is in those fields at confirm time — if the user corrects a value before
-confirming, the corrected value is what gets written to `meals_logged`, not the original scan
-estimate (see `backend/test/meals/routes.spec.ts`'s end-to-end test for this).
+fields, pre-filled with the computed sum across all identified dishes. It also shows a meal-type
+picker (Breakfast/Morning Snack/Lunch/Evening Snack/Dinner), pre-selected by a time-of-day guess
+(`guessMealType` in `frontend/src/meals/mealTypes.ts`) but fully changeable before confirming.
+`POST /meals/log` saves exactly whatever is in those fields (and whichever meal type is selected)
+at confirm time — if the user corrects a value before confirming, the corrected value is what gets
+written to `meals_logged`, not the original scan estimate (see
+`backend/test/meals/routes.spec.ts`'s end-to-end test for this).
 
 `meals_logged` stores one row per logged meal (which may span multiple dishes):
 `dish_labels` (all dish names in the plate), `portion_estimate` (opaque JSON — whatever shape the
-client used to arrive at the macros, e.g. per-dish portion multipliers), and `macros` (the final
-combined totals).
+client used to arrive at the macros, e.g. per-dish portion multipliers), `macros` (the final
+combined totals), and `meal_type` (see docs/schema.md).
+
+## Today's detail screen, grouped by meal type
+
+Tapping "Logged today" on the Dashboard opens `TodayDetailScreen`, which groups the same
+`GET /meals/today` data the Dashboard already fetches into the 5 meal-type slots (via
+`MealTypeSection`) instead of showing one flat list. Each slot shows its own summed calories and
+either its logged meals or an empty-state placeholder - there's no backend endpoint specific to
+this screen; grouping happens client-side since the data is identical to what Dashboard uses.
 
 ## Known gap: no image storage
 
@@ -123,4 +134,5 @@ All require a session (`Authorization: Bearer <token>`):
 |---|---|---|
 | `POST` | `/meals/scan` | Image in, per-dish confidence/macros/disambiguation out |
 | `POST` | `/meals/dish-macros` | Resolve a disambiguation answer (or portion change) into macros for one dish |
-| `POST` | `/meals/log` | Save the final (possibly edited) meal to `meals_logged` |
+| `POST` | `/meals/log` | Save the final (possibly edited) meal, plus its `mealType`, to `meals_logged` |
+| `DELETE` | `/meals/log/:id` | Remove a logged meal - scoped to `WHERE id = ? AND user_id = ?`, so it 404s (not a distinguishable "not yours") both when the id doesn't exist and when it belongs to another user. Does not adjust `usual_meals.frequency_count` - see docs/usual-meals.md's known limitations. |

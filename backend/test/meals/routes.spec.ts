@@ -81,6 +81,7 @@ describe("POST /meals/log", () => {
 		dishLabels: ["Dal (tadka)", "Roti (whole wheat, plain)"],
 		portionEstimate: { dishes: [{ label: "Dal (tadka)", portionMultiplier: 1 }] },
 		macros: { calories: 300, proteinG: 15, carbsG: 40, fatG: 8 },
+		mealType: "lunch",
 	};
 
 	it("rejects a request with no session", async () => {
@@ -135,6 +136,78 @@ describe("POST /meals/log", () => {
 		});
 		expect(response.status).toBe(400);
 	});
+
+	it("rejects a missing mealType", async () => {
+		const token = await signUpAndGetToken(env.DB, PHONE);
+		const payloadWithoutMealType: Record<string, unknown> = { ...validPayload };
+		delete payloadWithoutMealType.mealType;
+		const response = await postJson("/meals/log", token, payloadWithoutMealType);
+		expect(response.status).toBe(400);
+	});
+
+	it("rejects an invalid mealType", async () => {
+		const token = await signUpAndGetToken(env.DB, PHONE);
+		const response = await postJson("/meals/log", token, { ...validPayload, mealType: "brunch" });
+		expect(response.status).toBe(400);
+	});
+
+	it("stores the given mealType", async () => {
+		const token = await signUpAndGetToken(env.DB, PHONE);
+		const response = await postJson("/meals/log", token, { ...validPayload, mealType: "dinner" });
+		const { id } = await response.json<{ id: string }>();
+
+		const row = await env.DB.prepare("SELECT meal_type FROM meals_logged WHERE id = ?").bind(id).first<{
+			meal_type: string;
+		}>();
+		expect(row!.meal_type).toBe("dinner");
+	});
+});
+
+describe("DELETE /meals/log/:id", () => {
+	const validPayload = {
+		dishLabels: ["Dal (tadka)", "Roti (whole wheat, plain)"],
+		portionEstimate: { dishes: [{ label: "Dal (tadka)", portionMultiplier: 1 }] },
+		macros: { calories: 300, proteinG: 15, carbsG: 40, fatG: 8 },
+		mealType: "lunch",
+	};
+
+	it("rejects a request with no session", async () => {
+		const response = await SELF.fetch("https://example.com/meals/log/some-id", { method: "DELETE" });
+		expect(response.status).toBe(401);
+	});
+
+	it("deletes a logged meal and it no longer appears in meals_logged", async () => {
+		const token = await signUpAndGetToken(env.DB, PHONE);
+		const logResponse = await postJson("/meals/log", token, validPayload);
+		const { id } = await logResponse.json<{ id: string }>();
+
+		const deleteResponse = await authedFetch(`/meals/log/${id}`, token, { method: "DELETE" });
+		expect(deleteResponse.status).toBe(200);
+		const body = await deleteResponse.json<{ success: boolean }>();
+		expect(body.success).toBe(true);
+
+		const row = await env.DB.prepare("SELECT id FROM meals_logged WHERE id = ?").bind(id).first();
+		expect(row).toBeNull();
+	});
+
+	it("returns 404 for a meal id that doesn't exist", async () => {
+		const token = await signUpAndGetToken(env.DB, PHONE);
+		const response = await authedFetch("/meals/log/does-not-exist", token, { method: "DELETE" });
+		expect(response.status).toBe(404);
+	});
+
+	it("returns 404 (not someone else's data) when the meal belongs to a different user", async () => {
+		const ownerToken = await signUpAndGetToken(env.DB, PHONE);
+		const logResponse = await postJson("/meals/log", ownerToken, validPayload);
+		const { id } = await logResponse.json<{ id: string }>();
+
+		const otherToken = await signUpAndGetToken(env.DB, "+919876500000");
+		const response = await authedFetch(`/meals/log/${id}`, otherToken, { method: "DELETE" });
+		expect(response.status).toBe(404);
+
+		const row = await env.DB.prepare("SELECT id FROM meals_logged WHERE id = ?").bind(id).first();
+		expect(row).not.toBeNull();
+	});
 });
 
 describe("end to end: scan -> edit -> log saves the corrected value, not the original estimate", () => {
@@ -158,6 +231,7 @@ describe("end to end: scan -> edit -> log saves the corrected value, not the ori
 			dishLabels: [confidentDish.label],
 			portionEstimate: { dishes: [{ label: confidentDish.label, portionMultiplier: 1 }] },
 			macros: correctedMacros,
+			mealType: "lunch",
 		});
 		const { id } = await logResponse.json<{ id: string }>();
 

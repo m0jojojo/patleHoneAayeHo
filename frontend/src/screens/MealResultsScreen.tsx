@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { getDishMacros, logMeal, type Macros, type ScanResult, type ScannedDish } from '../meals/api';
+import { guessMealType, MEAL_TYPE_LABELS, MEAL_TYPES, type MealType } from '../meals/mealTypes';
 
 interface Props {
   scanResult: ScanResult;
@@ -58,6 +59,7 @@ export default function MealResultsScreen({ scanResult, onLogged }: Props) {
   });
   const [error, setError] = useState<string | null>(null);
   const [logging, setLogging] = useState(false);
+  const [mealType, setMealType] = useState<MealType>(() => guessMealType());
 
   async function handleResolveOil(index: number, dish: ScannedDish, oilLevel: OilLevel) {
     setResolvingIndex(index);
@@ -97,7 +99,7 @@ export default function MealResultsScreen({ scanResult, onLogged }: Props) {
         ? { manual: true }
         : { dishes: scanResult.dishes.map((dish) => ({ label: dish.label, portionMultiplier: dish.portionMultiplier })) };
 
-      const result = await logMeal({ dishLabels, portionEstimate, macros });
+      const result = await logMeal({ dishLabels, portionEstimate, macros, mealType });
       onLogged({ showSettingsNudge: result.showSettingsNudge });
     } catch {
       setError("Couldn't log this meal. Please try again.");
@@ -109,6 +111,22 @@ export default function MealResultsScreen({ scanResult, onLogged }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container} testID="meal-results-screen">
       <Text style={styles.title}>{manualMode ? "Couldn't identify your meal" : 'Here’s what we found'}</Text>
+
+      <Text style={styles.label}>Which meal is this?</Text>
+      <View style={styles.mealTypeRow}>
+        {MEAL_TYPES.map((type) => (
+          <Pressable
+            key={type}
+            testID={`meal-type-${type}`}
+            style={[styles.mealTypeOption, mealType === type && styles.mealTypeOptionSelected]}
+            onPress={() => setMealType(type)}
+          >
+            <Text style={[styles.mealTypeOptionText, mealType === type && styles.mealTypeOptionTextSelected]}>
+              {MEAL_TYPE_LABELS[type]}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
 
       {manualMode ? (
         <>
@@ -223,6 +241,11 @@ const styles = StyleSheet.create({
   oilOptions: { flexDirection: 'row', gap: 8, marginTop: 8 },
   oilOption: { borderWidth: 1, borderColor: '#111', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12 },
   oilOptionText: { fontSize: 14 },
+  mealTypeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  mealTypeOption: { borderWidth: 1, borderColor: '#111', borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 },
+  mealTypeOptionSelected: { backgroundColor: '#111' },
+  mealTypeOptionText: { fontSize: 13, color: '#111' },
+  mealTypeOptionTextSelected: { color: '#fff' },
   button: { backgroundColor: '#111', borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 12 },
   buttonDisabled: { opacity: 0.4 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },

@@ -57,6 +57,7 @@ describe("GET /recommendations/current", () => {
 				dishLabels: ["Paneer curry"],
 				portionEstimate: {},
 				macros: { calories: 1000, proteinG: 500, carbsG: 50, fatG: 50 },
+				mealType: "lunch",
 			}),
 		});
 

@@ -1,11 +1,13 @@
 import type { DishMacros } from "../nutrition/dishes";
 import { getUserDailyTargets } from "../nutrition/user-targets";
+import type { MealType } from "./log";
 
 export interface LoggedMealSummary {
 	id: string;
 	timestamp: string;
 	dishLabels: string[];
 	macros: DishMacros;
+	mealType: MealType;
 }
 
 export interface TodaySummary {
@@ -41,6 +43,7 @@ interface MealRow {
 	timestamp: string;
 	dish_labels: string;
 	macros: string;
+	meal_type: MealType;
 }
 
 // "Today" is a UTC calendar-day match on the stored ISO timestamp - a known simplification for
@@ -53,7 +56,7 @@ export async function getTodaySummary(db: D1Database, userId: string, now: Date 
 
 	const { results } = await db
 		.prepare(
-			"SELECT id, timestamp, dish_labels, macros FROM meals_logged WHERE user_id = ? AND timestamp LIKE ? ORDER BY timestamp ASC",
+			"SELECT id, timestamp, dish_labels, macros, meal_type FROM meals_logged WHERE user_id = ? AND timestamp LIKE ? ORDER BY timestamp ASC",
 		)
 		.bind(userId, `${todayPrefix}%`)
 		.all<MealRow>();
@@ -63,6 +66,7 @@ export async function getTodaySummary(db: D1Database, userId: string, now: Date 
 		timestamp: row.timestamp,
 		dishLabels: JSON.parse(row.dish_labels),
 		macros: JSON.parse(row.macros),
+		mealType: row.meal_type,
 	}));
 
 	const consumed = meals.reduce((sum, meal) => addMacros(sum, meal.macros), ZERO_MACROS);

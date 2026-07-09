@@ -17,6 +17,7 @@ import PhoneEntryScreen from './src/screens/PhoneEntryScreen';
 import ProteinPreferencesScreen from './src/screens/ProteinPreferencesScreen';
 import ProteinSettingsScreen from './src/screens/ProteinSettingsScreen';
 import SettingsNudgeScreen from './src/screens/SettingsNudgeScreen';
+import TodayDetailScreen from './src/screens/TodayDetailScreen';
 
 type Step =
   | { screen: 'checking' }
@@ -32,7 +33,8 @@ type Step =
   | { screen: 'mealScan' }
   | { screen: 'mealResults'; scanResult: ScanResult }
   | { screen: 'settingsNudge' }
-  | { screen: 'proteinSettings' };
+  | { screen: 'proteinSettings' }
+  | { screen: 'todayDetail' };
 
 // Determines where a signed-in user should resume, so backing out mid-onboarding and
 // returning picks up where they left off instead of restarting from Screen 1.
@@ -187,11 +189,21 @@ export default function App() {
     );
   }
 
+  if (step.screen === 'todayDetail') {
+    return (
+      <>
+        <TodayDetailScreen onBack={() => setStep({ screen: 'home' })} />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
   return (
     <>
       <DashboardScreen
         onScanMeal={() => setStep({ screen: 'mealScan' })}
         onOpenSettings={() => setStep({ screen: 'proteinSettings' })}
+        onOpenTodayDetail={() => setStep({ screen: 'todayDetail' })}
       />
       <StatusBar style="auto" />
     </>

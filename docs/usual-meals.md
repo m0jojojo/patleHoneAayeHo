@@ -42,6 +42,13 @@ recommendations feel wrong — e.g. a user who logs "roti + dal" and "roti + dal
 equally often will show up as two separate, lower-frequency "usual meals" rather than one
 frequently-eaten one.
 
+- **Deleting a logged meal doesn't decrement `frequency_count`.** `DELETE /meals/log/:id` (see
+  docs/meal-scanning.md) only removes the `meals_logged` row — `frequency_count` is treated as a
+  lifetime "how often do you eat this" learning signal for the recommendation engine, not a
+  live-recomputed aggregate. Safely decrementing it would need to know whether any other
+  still-existing `meals_logged` row shares the same signature, which isn't tracked. In practice
+  this means deleting a mistaken log entry doesn't "un-teach" the recommendation engine.
+
 ## Storage
 
 `usual_meals` (primary key `(user_id, meal_signature)`):

@@ -4,7 +4,7 @@ import type { AuthEnv } from "../auth/middleware";
 import { requireSession } from "../auth/middleware";
 import { calculateDishMacros, getDishByName, type OilLevel } from "../nutrition/dishes";
 import { createVisionProvider } from "../vision/provider";
-import { logMeal, validateLogMealInput } from "./log";
+import { deleteMeal, logMeal, validateLogMealInput, type MealType } from "./log";
 import { scanMeal } from "./scan";
 import { getTodaySummary } from "./today";
 import { getUsualMeals } from "./usual-meals";
@@ -56,7 +56,13 @@ export function registerMealRoutes(app: Hono<AuthEnv>): void {
 
 	app.post("/meals/log", requireSession, async (c) => {
 		const body = await c.req
-			.json<{ dishLabels?: unknown; portionEstimate?: unknown; macros?: unknown; sourceImageRef?: string | null }>()
+			.json<{
+				dishLabels?: unknown;
+				portionEstimate?: unknown;
+				macros?: unknown;
+				mealType?: unknown;
+				sourceImageRef?: string | null;
+			}>()
 			.catch(() => ({}) as Record<string, unknown>);
 
 		const error = validateLogMealInput(body);
@@ -68,10 +74,21 @@ export function registerMealRoutes(app: Hono<AuthEnv>): void {
 			dishLabels: body.dishLabels as string[],
 			portionEstimate: body.portionEstimate,
 			macros: body.macros as { calories: number; proteinG: number; carbsG: number; fatG: number },
+			mealType: body.mealType as MealType,
 			sourceImageRef: body.sourceImageRef ?? null,
 		});
 
 		return c.json({ id, showSettingsNudge });
+	});
+
+	// 404 (rather than a distinguishable "not yours") both when the id doesn't exist at all and
+	// when it belongs to someone else - doesn't leak whether a given id belongs to another user.
+	app.delete("/meals/log/:id", requireSession, async (c) => {
+		const deleted = await deleteMeal(c.env.DB, c.get("user").id, c.req.param("id"));
+		if (!deleted) {
+			throw new HttpError(404, "Meal not found");
+		}
+		return c.json({ success: true });
 	});
 
 	app.get("/meals/today", requireSession, async (c) => {

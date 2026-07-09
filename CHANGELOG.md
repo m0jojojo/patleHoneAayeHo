@@ -59,3 +59,20 @@ Plain-English, one line per phase.
   breakdown (clearly labeled "AI estimate," still fully editable) instead of just showing zeros -
   while dal, sabzi, and curries (where oil amount matters a lot) still go through the more
   trustworthy catalog + confirmed-oil-level path as before.
+- **Dashboard redesign**: the home screen has a real visual design now instead of plain black-and-
+  white text and boxes - rounded cards, colored icons per macro, and progress bars that turn amber
+  or red when you're behind or over target instead of one flat black bar. Today's calories are now
+  the headline number, with the scan-a-meal camera action built right into that card. Nothing about
+  how the screen works changed, only how it looks.
+- **Bottom nav bar**: added a simple bottom bar to the home screen with a Home indicator and a
+  floating "+" button that opens the scanner - the same quick-access shortcut you'd expect from a
+  tracking app, without the extra sections (Diet/Coach/Streaks) we don't have.
+- **Delete a logged meal**: each meal on today's log now has a small trash icon - tap it, confirm,
+  and it's removed from today's log and totals. Doesn't affect what the recommendation engine has
+  learned about how often you eat that combination (that's tracked separately and isn't undone by
+  deleting a single entry).
+- **Meal-type grouping (Breakfast/Morning Snack/Lunch/Evening Snack/Dinner)**: when logging a meal,
+  you now pick which one it was (guessed for you based on the time of day, but always changeable).
+  Tapping "Logged today" on the home screen opens a new detail view that groups everything you've
+  eaten today into those five sections instead of one flat list, matching how food-tracking apps
+  usually lay out a full day.

@@ -44,6 +44,7 @@ erDiagram
         TEXT portion_estimate
         TEXT macros
         TEXT source_image_ref
+        TEXT meal_type
     }
 
     usual_meals {
@@ -125,7 +126,10 @@ inserting anything else fails.
 Every meal a user has scanned or logged. `dish_labels`, `portion_estimate`, and `macros` are
 stored as JSON *text* — D1/SQLite has no native JSON column type, so the app is responsible for
 `JSON.stringify`/`JSON.parse` on the way in and out. `source_image_ref` is nullable, since a
-manually-entered meal (no photo) is still valid.
+manually-entered meal (no photo) is still valid. `meal_type` (`breakfast` | `morning_snack` |
+`lunch` | `evening_snack` | `dinner`) is `NOT NULL DEFAULT 'lunch'` — the default only matters for
+rows logged before this column existed; every meal logged through the app picks (or is guessed) a
+real value, validated in `backend/src/meals/log.ts`.
 
 ### `usual_meals`
 

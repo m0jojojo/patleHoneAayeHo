@@ -1,4 +1,5 @@
 import { getSessionToken } from '../auth/session';
+import type { MealType } from './mealTypes';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8787';
 
@@ -69,6 +70,7 @@ export function logMeal(input: {
   dishLabels: string[];
   portionEstimate: unknown;
   macros: Macros;
+  mealType: MealType;
 }): Promise<{ id: string; showSettingsNudge: boolean }> {
   return authedRequest('/meals/log', { method: 'POST', body: JSON.stringify(input) });
 }
@@ -78,6 +80,7 @@ export interface LoggedMealSummary {
   timestamp: string;
   dishLabels: string[];
   macros: Macros;
+  mealType: MealType;
 }
 
 export interface TodaySummary {
@@ -90,6 +93,10 @@ export interface TodaySummary {
 
 export function getTodaySummary(): Promise<TodaySummary> {
   return authedRequest('/meals/today');
+}
+
+export function deleteMeal(id: string): Promise<{ success: boolean }> {
+  return authedRequest(`/meals/log/${id}`, { method: 'DELETE' });
 }
 
 export interface UsualMeal {

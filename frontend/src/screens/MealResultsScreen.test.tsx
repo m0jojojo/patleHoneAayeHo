@@ -156,6 +156,54 @@ describe('MealResultsScreen', () => {
     );
   });
 
+  it('shows all five meal-type options and defaults to a selection', () => {
+    const scanResult: ScanResult = {
+      visionFailed: false,
+      dishes: [
+        {
+          label: 'White rice (cooked)',
+          matched: true,
+          confidence: 0.95,
+          portionMultiplier: 1,
+          needsDisambiguation: false,
+          macros: { calories: 150, proteinG: 3, carbsG: 33, fatG: 0.3 },
+        },
+      ],
+    };
+
+    const { getByText } = render(<MealResultsScreen scanResult={scanResult} onLogged={jest.fn()} />);
+    expect(getByText('Breakfast')).toBeTruthy();
+    expect(getByText('Morning Snack')).toBeTruthy();
+    expect(getByText('Lunch')).toBeTruthy();
+    expect(getByText('Evening Snack')).toBeTruthy();
+    expect(getByText('Dinner')).toBeTruthy();
+  });
+
+  it('logs the selected meal type when a different one is chosen', async () => {
+    const scanResult: ScanResult = {
+      visionFailed: false,
+      dishes: [
+        {
+          label: 'White rice (cooked)',
+          matched: true,
+          confidence: 0.95,
+          portionMultiplier: 1,
+          needsDisambiguation: false,
+          macros: { calories: 150, proteinG: 3, carbsG: 33, fatG: 0.3 },
+        },
+      ],
+    };
+    mockLogMeal.mockResolvedValueOnce({ id: 'abc', showSettingsNudge: true });
+
+    const { getByTestId } = render(<MealResultsScreen scanResult={scanResult} onLogged={jest.fn()} />);
+
+    fireEvent.press(getByTestId('meal-type-dinner'));
+    fireEvent.press(getByTestId('log-meal-button'));
+
+    await waitFor(() => expect(mockLogMeal).toHaveBeenCalled());
+    expect(mockLogMeal).toHaveBeenCalledWith(expect.objectContaining({ mealType: 'dinner' }));
+  });
+
   it('falls back to manual entry when the vision scan failed', async () => {
     const scanResult: ScanResult = { visionFailed: true, dishes: [] };
     mockLogMeal.mockResolvedValueOnce({ id: 'abc', showSettingsNudge: true });

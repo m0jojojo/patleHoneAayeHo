@@ -80,6 +80,7 @@ describe("GET /meals/today", () => {
 			dishLabels: ["Dal (tadka)"],
 			portionEstimate: {},
 			macros,
+			mealType: "lunch",
 		});
 
 		const response = await authedFetch("/meals/today", token);
@@ -87,13 +88,14 @@ describe("GET /meals/today", () => {
 			targets: { calories: number };
 			consumed: typeof macros;
 			remaining: { calories: number };
-			meals: { dishLabels: string[]; macros: typeof macros }[];
+			meals: { dishLabels: string[]; macros: typeof macros; mealType: string }[];
 		}>();
 
 		expect(body.consumed).toEqual(macros);
 		expect(body.remaining.calories).toBe(body.targets.calories - macros.calories);
 		expect(body.meals).toHaveLength(1);
 		expect(body.meals[0].dishLabels).toEqual(["Dal (tadka)"]);
+		expect(body.meals[0].mealType).toBe("lunch");
 	});
 
 	it("sums macros across multiple meals logged today", async () => {
@@ -104,11 +106,13 @@ describe("GET /meals/today", () => {
 			dishLabels: ["Dal (tadka)"],
 			portionEstimate: {},
 			macros: { calories: 200, proteinG: 10, carbsG: 20, fatG: 5 },
+			mealType: "lunch",
 		});
 		await postJson("/meals/log", token, {
 			dishLabels: ["Boiled egg"],
 			portionEstimate: {},
 			macros: { calories: 78, proteinG: 6.5, carbsG: 0.5, fatG: 5 },
+			mealType: "morning_snack",
 		});
 
 		const response = await authedFetch("/meals/today", token);
@@ -155,9 +159,19 @@ describe("GET /meals/usual", () => {
 		await completeOnboarding(token);
 
 		const macros = { calories: 100, proteinG: 5, carbsG: 10, fatG: 2 };
-		await postJson("/meals/log", token, { dishLabels: ["Roti"], portionEstimate: {}, macros });
-		await postJson("/meals/log", token, { dishLabels: ["Boiled Egg"], portionEstimate: {}, macros });
-		await postJson("/meals/log", token, { dishLabels: ["Boiled Egg"], portionEstimate: {}, macros });
+		await postJson("/meals/log", token, { dishLabels: ["Roti"], portionEstimate: {}, macros, mealType: "lunch" });
+		await postJson("/meals/log", token, {
+			dishLabels: ["Boiled Egg"],
+			portionEstimate: {},
+			macros,
+			mealType: "morning_snack",
+		});
+		await postJson("/meals/log", token, {
+			dishLabels: ["Boiled Egg"],
+			portionEstimate: {},
+			macros,
+			mealType: "morning_snack",
+		});
 
 		const response = await authedFetch("/meals/usual", token);
 		expect(response.status).toBe(200);

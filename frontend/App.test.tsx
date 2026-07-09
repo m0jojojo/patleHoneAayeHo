@@ -111,4 +111,26 @@ describe('App', () => {
 
     await waitFor(() => expect(getByTestId('meal-scan-screen')).toBeTruthy());
   });
+
+  it('navigates from the dashboard to today\'s detail screen and back', async () => {
+    mockGetSessionToken.mockResolvedValueOnce('a-token');
+    mockGetOnboardingStatus.mockResolvedValueOnce({
+      goal: 'lose_weight',
+      dietType: 'vegetarian',
+      proteinPreferences: ['paneer'],
+      bodyStats: { height: 170, weight: 65, age: 35, activityLevel: 'moderate', sex: 'female' },
+      completed: true,
+    });
+    mockGetTodaySummary.mockResolvedValue(emptyTodaySummary);
+    const { findByTestId, getByTestId } = render(<App />);
+    await findByTestId('dashboard-screen');
+
+    fireEvent.press(getByTestId('open-today-detail-button'));
+
+    await waitFor(() => expect(getByTestId('today-detail-screen')).toBeTruthy());
+
+    fireEvent.press(await findByTestId('today-detail-back-button'));
+
+    await waitFor(() => expect(getByTestId('dashboard-screen')).toBeTruthy());
+  });
 });

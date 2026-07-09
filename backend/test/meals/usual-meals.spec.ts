@@ -38,7 +38,7 @@ describe("logMeal - usual_meals tracking", () => {
 	it("creates a new usual_meals row the first time a meal combination is logged", async () => {
 		const userId = await createUser("+919876543210");
 
-		await logMeal(env.DB, userId, { dishLabels: ["Roti", "Dal (tadka)"], portionEstimate: {}, macros: MACROS });
+		await logMeal(env.DB, userId, { dishLabels: ["Roti", "Dal (tadka)"], portionEstimate: {}, macros: MACROS, mealType: "lunch" });
 
 		const usualMeals = await getUsualMeals(env.DB, userId);
 		expect(usualMeals).toHaveLength(1);
@@ -48,8 +48,8 @@ describe("logMeal - usual_meals tracking", () => {
 	it("increments frequency_count rather than creating a duplicate row for a repeat meal", async () => {
 		const userId = await createUser("+919876543210");
 
-		await logMeal(env.DB, userId, { dishLabels: ["Roti", "Dal (tadka)"], portionEstimate: {}, macros: MACROS });
-		await logMeal(env.DB, userId, { dishLabels: ["Dal (tadka)", "Roti"], portionEstimate: {}, macros: MACROS });
+		await logMeal(env.DB, userId, { dishLabels: ["Roti", "Dal (tadka)"], portionEstimate: {}, macros: MACROS, mealType: "lunch" });
+		await logMeal(env.DB, userId, { dishLabels: ["Dal (tadka)", "Roti"], portionEstimate: {}, macros: MACROS, mealType: "lunch" });
 
 		const usualMeals = await getUsualMeals(env.DB, userId);
 		expect(usualMeals).toHaveLength(1);
@@ -59,11 +59,12 @@ describe("logMeal - usual_meals tracking", () => {
 	it("creates a separate row for a genuinely new meal combination", async () => {
 		const userId = await createUser("+919876543210");
 
-		await logMeal(env.DB, userId, { dishLabels: ["Roti", "Dal (tadka)"], portionEstimate: {}, macros: MACROS });
+		await logMeal(env.DB, userId, { dishLabels: ["Roti", "Dal (tadka)"], portionEstimate: {}, macros: MACROS, mealType: "lunch" });
 		await logMeal(env.DB, userId, {
 			dishLabels: ["White rice (cooked)", "Chicken curry"],
 			portionEstimate: {},
 			macros: MACROS,
+			mealType: "lunch",
 		});
 
 		const usualMeals = await getUsualMeals(env.DB, userId);
@@ -74,10 +75,10 @@ describe("logMeal - usual_meals tracking", () => {
 	it("sorts usual meals by frequency_count descending", async () => {
 		const userId = await createUser("+919876543210");
 
-		await logMeal(env.DB, userId, { dishLabels: ["Roti"], portionEstimate: {}, macros: MACROS });
-		await logMeal(env.DB, userId, { dishLabels: ["Boiled egg"], portionEstimate: {}, macros: MACROS });
-		await logMeal(env.DB, userId, { dishLabels: ["Boiled egg"], portionEstimate: {}, macros: MACROS });
-		await logMeal(env.DB, userId, { dishLabels: ["Boiled egg"], portionEstimate: {}, macros: MACROS });
+		await logMeal(env.DB, userId, { dishLabels: ["Roti"], portionEstimate: {}, macros: MACROS, mealType: "lunch" });
+		await logMeal(env.DB, userId, { dishLabels: ["Boiled egg"], portionEstimate: {}, macros: MACROS, mealType: "lunch" });
+		await logMeal(env.DB, userId, { dishLabels: ["Boiled egg"], portionEstimate: {}, macros: MACROS, mealType: "lunch" });
+		await logMeal(env.DB, userId, { dishLabels: ["Boiled egg"], portionEstimate: {}, macros: MACROS, mealType: "lunch" });
 
 		const usualMeals = await getUsualMeals(env.DB, userId);
 		expect(usualMeals[0].meal_signature).toBe(computeMealSignature(["Boiled egg"]));
