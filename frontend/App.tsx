@@ -34,7 +34,7 @@ type Step =
   | { screen: 'mealResults'; scanResult: ScanResult }
   | { screen: 'settingsNudge' }
   | { screen: 'proteinSettings' }
-  | { screen: 'todayDetail' };
+  | { screen: 'todayDetail'; date: string };
 
 // Determines where a signed-in user should resume, so backing out mid-onboarding and
 // returning picks up where they left off instead of restarting from Screen 1.
@@ -192,7 +192,7 @@ export default function App() {
   if (step.screen === 'todayDetail') {
     return (
       <>
-        <TodayDetailScreen onBack={() => setStep({ screen: 'home' })} />
+        <TodayDetailScreen date={step.date} onBack={() => setStep({ screen: 'home' })} />
         <StatusBar style="auto" />
       </>
     );
@@ -203,7 +203,7 @@ export default function App() {
       <DashboardScreen
         onScanMeal={() => setStep({ screen: 'mealScan' })}
         onOpenSettings={() => setStep({ screen: 'proteinSettings' })}
-        onOpenTodayDetail={() => setStep({ screen: 'todayDetail' })}
+        onOpenTodayDetail={(date) => setStep({ screen: 'todayDetail', date })}
       />
       <StatusBar style="auto" />
     </>

@@ -1,5 +1,6 @@
 import { Alert } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { todayDateString } from '../dateUtils';
 import { deleteMeal, getTodaySummary } from '../meals/api';
 import TodayDetailScreen from './TodayDetailScreen';
 
@@ -95,5 +96,23 @@ describe('TodayDetailScreen', () => {
 
     await waitFor(() => expect(mockDeleteMeal).toHaveBeenCalledWith('m1'));
     await waitFor(() => expect(queryByTestId('meal-type-section-row-m1')).toBeNull());
+  });
+
+  it('defaults to loading real today when no date prop is given', async () => {
+    mockGetTodaySummary.mockResolvedValueOnce(baseSummary);
+    const { findByTestId, findByText } = render(<TodayDetailScreen onBack={jest.fn()} />);
+    await findByTestId('meal-type-section-breakfast');
+
+    expect(mockGetTodaySummary).toHaveBeenCalledWith(todayDateString());
+    expect(await findByText('Today')).toBeTruthy();
+  });
+
+  it('loads and labels a past date when one is given', async () => {
+    mockGetTodaySummary.mockResolvedValueOnce(baseSummary);
+    const { findByTestId, findByText } = render(<TodayDetailScreen date="2026-07-05" onBack={jest.fn()} />);
+    await findByTestId('meal-type-section-breakfast');
+
+    expect(mockGetTodaySummary).toHaveBeenCalledWith('2026-07-05');
+    expect(await findByText('5 Jul')).toBeTruthy();
   });
 });

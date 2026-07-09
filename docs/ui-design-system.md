@@ -41,29 +41,45 @@ top of it (`frontend/src/theme/iconSmokeTest.test.tsx`).
 | `Card` | Base rounded, shadowed surface |
 | `ProgressBar` | Horizontal bar; fill color reflects the *true* (unclamped) percentage of target - green when on track, amber when behind pace (`< 85%`), red when over (`> 100%`) - while the visual width is clamped at 100% |
 | `StatBadgeIcon` | Colored circular icon chip; icon name and tint color are chosen by the caller |
-| `PillButton` | Rounded pill button (`subtle` or `solid` variant), replacing plain text links |
+| `PillButton` | Rounded pill button (`subtle` or `solid` variant), replacing plain text links. Accepts an optional `style` override (e.g. `flex: 1` for the calendar's evenly-split Cancel/Done buttons) |
 | `SectionLabel` | Small icon+label section header |
 | `EmptyState` | Friendlier "nothing here yet" treatment than a bare gray text line |
+| `BottomNavBar` | Simplified bottom bar: a static Home indicator + a centered, elevated "+" that triggers the scan-meal action - no Diet/Coach/Streaks tabs, since those aren't features this app has |
+| `CalendarModal` | Custom month-grid date picker (no calendar library) - lets the dashboard load a past day's summary; future dates are shown but disabled |
 
 **Composites** - assembled from the primitives above, each mapped to data the backend already
 returns:
 
 | Component | Purpose |
 |---|---|
-| `MacroSummaryCard` | Today's calories as the headline number, with the meal-scan camera action embedded in the card header, and protein/carbs/fat as three color-coded mini `ProgressBar`s underneath |
-| `MealLogCard` | One logged meal: time, calorie readout, dish list, and a small per-macro breakdown row |
+| `MacroSummaryCard` | The viewed day's calories as the headline number (caption reads "Eaten today" or "Eaten on 5 Jul" via its `dateLabel` prop), with the meal-scan camera action embedded in the card header, and protein/carbs/fat as three color-coded mini `ProgressBar`s underneath |
+| `MealLogCard` | One logged meal: time, calorie readout, dish list, and a small per-macro breakdown row, with an optional delete button |
+| `MealTypeSection` | One meal-type slot (Breakfast/Morning Snack/Lunch/Evening Snack/Dinner) on the Today-detail screen: a header with summed calories, then a `MealLogCard` per meal or an `EmptyState` |
+
+## Shared date helpers (`frontend/src/dateUtils.ts`)
+
+`formatDateString`/`todayDateString`/`formatDateForDisplay` are the single source of truth for
+"YYYY-MM-DD" formatting and short display labels (e.g. "9 Jul"), used by `CalendarModal`,
+`DashboardScreen`, and `TodayDetailScreen` - written once to avoid three slightly-different copies
+of the same date math.
 
 ## Dashboard composition
 
-`DashboardScreen.tsx` composes these as: header (title + "My Proteins" `PillButton`) →
-`MacroSummaryCard` → recommendation/frequency-prompt banners (`Card` + `PillButton`) →
-`SectionLabel` → a `MealLogCard` per logged meal, or `EmptyState` when none exist.
+`DashboardScreen.tsx` composes these as: header (profile-icon avatar → `onOpenSettings`, a date
+title, and a calendar-icon button that opens `CalendarModal`) → `MacroSummaryCard` →
+recommendation/frequency-prompt banners (`Card` + `PillButton`, only shown when viewing today,
+since a protein-gap recommendation doesn't make sense attached to a past day) → `SectionLabel` →
+a `MealLogCard` per logged meal, or `EmptyState` when none exist. `BottomNavBar` and (when open)
+`CalendarModal` sit outside the scrollable content.
 
-Every existing `testID` was preserved during this refactor (loading/error states, the scan and
-settings buttons, the recommendation/dismiss/frequency-prompt flow, per-meal rows, and the empty
-state) - the only test assertions that changed are the two that checked the *exact text format* of
-a macro value (previously `"500 / 2000"`, now `"500g"` next to a `ProgressBar`), since that's the
-one piece of data presentation this redesign deliberately changes.
+Picking a date from the calendar re-fetches `getTodaySummary(selectedDate)` and updates every
+date-dependent label on the screen; tapping "Logged today" passes that same date through to
+`TodayDetailScreen`, so drilling in from a past day shows that day's meals, not always real today.
+
+Every existing `testID` was preserved during the initial restyle (loading/error states, the scan
+and settings buttons, the recommendation/dismiss/frequency-prompt flow, per-meal rows, and the
+empty state) - the only test assertions that changed then were the two that checked the *exact
+text format* of a macro value (previously `"500 / 2000"`, now `"500g"` next to a `ProgressBar`).
 
 ## Testing approach
 

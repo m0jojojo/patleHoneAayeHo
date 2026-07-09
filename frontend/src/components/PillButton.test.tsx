@@ -34,4 +34,11 @@ describe('PillButton', () => {
     fireEvent.press(getByText('Dismiss'));
     expect(onPress).not.toHaveBeenCalled();
   });
+
+  it('merges a caller-provided style override', () => {
+    const { getByTestId } = render(
+      <PillButton testID="pill" label="Cancel" onPress={jest.fn()} style={{ flex: 1 }} />,
+    );
+    expect(mergedStyle(getByTestId('pill').props.style).flex).toBe(1);
+  });
 });

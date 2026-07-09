@@ -1,5 +1,6 @@
 import { Alert } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { todayDateString } from '../dateUtils';
 import { deleteMeal, getTodaySummary } from '../meals/api';
 import { dismissRecommendation, getCurrentRecommendation } from '../recommendations/api';
 import DashboardScreen from './DashboardScreen';
@@ -97,7 +98,7 @@ describe('DashboardScreen', () => {
     expect(onScanMeal).toHaveBeenCalled();
   });
 
-  it('calls onOpenSettings when the My Proteins link is pressed', async () => {
+  it('calls onOpenSettings when the profile avatar is pressed', async () => {
     mockGetTodaySummary.mockResolvedValueOnce(baseSummary);
 
     const onOpenSettings = jest.fn();
@@ -227,7 +228,7 @@ describe('DashboardScreen', () => {
     await findByTestId('dashboard-screen');
 
     fireEvent.press(getByTestId('open-today-detail-button'));
-    expect(onOpenTodayDetail).toHaveBeenCalled();
+    expect(onOpenTodayDetail).toHaveBeenCalledWith(todayDateString());
   });
 
   it('asks for confirmation before deleting a meal, and does nothing if cancelled', async () => {
@@ -279,5 +280,68 @@ describe('DashboardScreen', () => {
     await waitFor(() => expect(mockDeleteMeal).toHaveBeenCalled());
     await waitFor(() => expect(Alert.alert).toHaveBeenCalledTimes(2));
     expect(getByTestId('meal-row-m1')).toBeTruthy();
+  });
+
+  it('shows "Today" as the title by default', async () => {
+    mockGetTodaySummary.mockResolvedValueOnce(baseSummary);
+    const { findByText } = render(<DashboardScreen onScanMeal={jest.fn()} onOpenSettings={jest.fn()} onOpenTodayDetail={jest.fn()} />);
+    expect(await findByText('Today')).toBeTruthy();
+  });
+
+  it('opens the calendar and loads the picked date\'s summary', async () => {
+    mockGetTodaySummary.mockResolvedValueOnce(baseSummary);
+    mockGetTodaySummary.mockResolvedValueOnce({
+      ...baseSummary,
+      meals: [],
+      consumed: { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
+    });
+
+    const { findByTestId, getByTestId, getAllByTestId, findByText } = render(
+      <DashboardScreen onScanMeal={jest.fn()} onOpenSettings={jest.fn()} onOpenTodayDetail={jest.fn()} />,
+    );
+    await findByTestId('meal-row-m1');
+
+    fireEvent.press(getByTestId('open-calendar-button'));
+    const calendarModal = await findByTestId('dashboard-calendar-modal');
+    expect(calendarModal.props.visible).toBe(true);
+
+    fireEvent.press(getByTestId('calendar-prev-month'));
+    // Any day in the previous month is a safe, always-in-the-past pick regardless of what "today"
+    // actually is when this test runs.
+    const previousMonthDayButtons = getAllByTestId(/^calendar-day-/);
+    fireEvent.press(previousMonthDayButtons[previousMonthDayButtons.length - 1]);
+    fireEvent.press(getByTestId('calendar-done-button'));
+
+    await waitFor(() => expect(mockGetTodaySummary).toHaveBeenCalledTimes(2));
+    expect(await findByText('Nothing logged yet.')).toBeTruthy();
+  });
+
+  it('hides the recommendation and frequency-prompt cards when viewing a non-today date', async () => {
+    mockGetTodaySummary.mockResolvedValueOnce(baseSummary);
+    mockGetTodaySummary.mockResolvedValueOnce({ ...baseSummary, meals: [] });
+    mockGetCurrentRecommendation.mockResolvedValueOnce({
+      recommendation: {
+        type: 'addition',
+        proteinType: 'eggs',
+        proteinLabel: 'Eggs',
+        source: 'default',
+        message: 'Add some eggs to help hit your protein target today.',
+        remainingProteinG: 20,
+      },
+    });
+
+    const { findByTestId, getByTestId, getAllByTestId, queryByTestId } = render(
+      <DashboardScreen onScanMeal={jest.fn()} onOpenSettings={jest.fn()} onOpenTodayDetail={jest.fn()} />,
+    );
+    await findByTestId('recommendation-card');
+
+    fireEvent.press(getByTestId('open-calendar-button'));
+    await findByTestId('dashboard-calendar-modal');
+    fireEvent.press(getByTestId('calendar-prev-month'));
+    const previousMonthDayButtons = getAllByTestId(/^calendar-day-/);
+    fireEvent.press(previousMonthDayButtons[previousMonthDayButtons.length - 1]);
+    fireEvent.press(getByTestId('calendar-done-button'));
+
+    await waitFor(() => expect(queryByTestId('recommendation-card')).toBeNull());
   });
 });

@@ -91,8 +91,10 @@ export interface TodaySummary {
   meals: LoggedMealSummary[];
 }
 
-export function getTodaySummary(): Promise<TodaySummary> {
-  return authedRequest('/meals/today');
+// date, when given, must be "YYYY-MM-DD" - lets the calendar picker load a past day's summary
+// instead of always today's.
+export function getTodaySummary(date?: string): Promise<TodaySummary> {
+  return authedRequest(date ? `/meals/today?date=${date}` : '/meals/today');
 }
 
 export function deleteMeal(id: string): Promise<{ success: boolean }> {

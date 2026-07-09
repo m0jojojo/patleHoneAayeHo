@@ -32,4 +32,16 @@ describe('MacroSummaryCard', () => {
     fireEvent.press(getByTestId('scan-meal-button'));
     expect(onScanMeal).toHaveBeenCalledTimes(1);
   });
+
+  it('defaults the caption to "Eaten today"', () => {
+    const { getByText } = render(<MacroSummaryCard consumed={consumed} targets={targets} onScanMeal={jest.fn()} />);
+    expect(getByText('Eaten today')).toBeTruthy();
+  });
+
+  it('shows a custom dateLabel when given', () => {
+    const { getByText } = render(
+      <MacroSummaryCard consumed={consumed} targets={targets} onScanMeal={jest.fn()} dateLabel="Eaten on 5 Jul" />,
+    );
+    expect(getByText('Eaten on 5 Jul')).toBeTruthy();
+  });
 });

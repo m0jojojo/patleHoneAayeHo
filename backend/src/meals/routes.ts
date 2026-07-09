@@ -91,8 +91,23 @@ export function registerMealRoutes(app: Hono<AuthEnv>): void {
 		return c.json({ success: true });
 	});
 
+	// Defaults to real "today"; ?date=YYYY-MM-DD lets the calendar picker on the dashboard load a
+	// past day's summary using the exact same logic (getTodaySummary already keys off whatever
+	// `Date` it's given, so this just exposes that at the route level).
 	app.get("/meals/today", requireSession, async (c) => {
-		const summary = await getTodaySummary(c.env.DB, c.get("user").id);
+		const dateParam = c.req.query("date");
+		let now: Date | undefined;
+		if (dateParam !== undefined) {
+			if (!/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+				throw new HttpError(400, "date must be in YYYY-MM-DD format");
+			}
+			now = new Date(dateParam);
+			if (Number.isNaN(now.getTime())) {
+				throw new HttpError(400, "date must be a valid calendar date");
+			}
+		}
+
+		const summary = await getTodaySummary(c.env.DB, c.get("user").id, now);
 		return c.json(summary);
 	});
 

@@ -10,6 +10,7 @@ interface Props {
   consumed: Macros;
   targets: Macros;
   onScanMeal: () => void;
+  dateLabel?: string;
   testID?: string;
 }
 
@@ -29,7 +30,7 @@ const MACRO_STATS: MacroStat[] = [
 // The "Track Food"-style headline card: today's calories as the big number, with the meal-scan
 // action embedded as an icon button in the header, and protein/carb/fat as three color-coded mini
 // progress bars underneath.
-export default function MacroSummaryCard({ consumed, targets, onScanMeal, testID }: Props) {
+export default function MacroSummaryCard({ consumed, targets, onScanMeal, dateLabel = 'Eaten today', testID }: Props) {
   return (
     <Card testID={testID} style={styles.card}>
       <View style={styles.header}>
@@ -39,7 +40,7 @@ export default function MacroSummaryCard({ consumed, targets, onScanMeal, testID
             <Text style={styles.headline}>
               {Math.round(consumed.calories)} <Text style={styles.headlineUnit}>/ {Math.round(targets.calories)} Cal</Text>
             </Text>
-            <Text style={styles.subtitle}>Eaten today</Text>
+            <Text style={styles.subtitle}>{dateLabel}</Text>
           </View>
         </View>
         <Pressable testID="scan-meal-button" onPress={onScanMeal} style={styles.scanButton}>

@@ -76,3 +76,8 @@ Plain-English, one line per phase.
   Tapping "Logged today" on the home screen opens a new detail view that groups everything you've
   eaten today into those five sections instead of one flat list, matching how food-tracking apps
   usually lay out a full day.
+- **View a past day + profile/calendar header**: the home screen's top bar is now a profile icon
+  (opens My Proteins) on one side and a calendar icon on the other. Tapping the calendar lets you
+  pick any past date and see that day's meals, macros, and totals instead of only ever today's -
+  the "Logged today" detail view follows along too, showing whichever day you picked. Today-only
+  suggestions (the protein recommendation) only show up while you're actually viewing today.

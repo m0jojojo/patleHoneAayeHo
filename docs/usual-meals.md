@@ -67,9 +67,15 @@ meal_signature) DO UPDATE` — no separate "does this exist?" query needed, and 
 
 ## Endpoints
 
-- `GET /meals/today` — today's logged meals plus consumed/target/remaining macros (today is
-  currently a UTC calendar-day match on the stored timestamp — a known simplification that
-  doesn't yet account for the user's actual local timezone).
+- `GET /meals/today` — a day's logged meals plus consumed/target/remaining macros; defaults to
+  real "today" but accepts `?date=YYYY-MM-DD` to load any other day (400 if malformed), which is
+  what the dashboard's calendar picker uses to look at a past day. The match is still a plain
+  calendar-day prefix match on the stored (UTC) timestamp - a known simplification that doesn't
+  account for the user's actual local timezone at the storage layer. In practice this is mostly
+  masked for the dashboard/detail screens specifically, since the frontend computes "today" (and
+  whichever date the calendar picker selects) from the device's local clock and sends that exact
+  string as `?date=` - so what the user sees as "today" lines up with their own midnight, not
+  UTC's, even though a meal's stored `timestamp` itself is still UTC.
 - `GET /meals/usual` — this user's usual meals, sorted by `frequency_count` descending, each with
   its (display) dish labels, frequency, and last-logged time. This is what Phase 8's
   recommendation engine will read from to rank candidate additions.

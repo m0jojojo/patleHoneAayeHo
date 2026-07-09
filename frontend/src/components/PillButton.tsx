@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { colors, radius, spacing, typography } from '../theme/tokens';
 
 interface Props {
@@ -6,22 +6,25 @@ interface Props {
   onPress: () => void;
   variant?: 'solid' | 'subtle';
   disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
   testID?: string;
 }
 
 // Rounded pill button - replaces the plain text links previously used for secondary actions
 // ("My Proteins", "Dismiss", "Adjust"). "subtle" (the default) mirrors the reference's "View
 // Insight" style; "solid" is available for a more prominent pill-shaped action if one is needed.
-export default function PillButton({ label, onPress, variant = 'subtle', disabled, testID }: Props) {
+export default function PillButton({ label, onPress, variant = 'subtle', disabled, style, testID }: Props) {
   const isSolid = variant === 'solid';
   return (
     <Pressable
       testID={testID}
       onPress={onPress}
       disabled={disabled}
-      style={[styles.pill, isSolid ? styles.solid : styles.subtle, disabled && styles.disabled]}
+      style={[styles.pill, isSolid ? styles.solid : styles.subtle, disabled && styles.disabled, style]}
     >
-      <Text style={[styles.label, isSolid ? styles.solidLabel : styles.subtleLabel]}>{label}</Text>
+      <Text style={[styles.label, isSolid ? styles.solidLabel : styles.subtleLabel, styles.centeredLabel]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -37,6 +40,7 @@ const styles = StyleSheet.create({
   subtle: { backgroundColor: colors.brandSubtle },
   disabled: { opacity: 0.5 },
   label: { ...typography.bodyBold, fontSize: 13 },
+  centeredLabel: { textAlign: 'center' },
   solidLabel: { color: colors.textOnDark },
   subtleLabel: { color: colors.brand },
 });

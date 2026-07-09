@@ -146,6 +146,53 @@ describe("GET /meals/today", () => {
 		expect(body.consumed.calories).toBe(0);
 		expect(body.meals).toEqual([]);
 	});
+
+	it("loads a past day's summary when ?date= is given", async () => {
+		const token = await signUpAndGetToken(env.DB, PHONE);
+		await completeOnboarding(token);
+
+		const user = await env.DB.prepare("SELECT id FROM users WHERE phone_number = ?").bind(PHONE).first<{
+			id: string;
+		}>();
+		await env.DB.prepare(
+			"INSERT INTO meals_logged (id, user_id, timestamp, dish_labels, portion_estimate, macros, source_image_ref, meal_type) VALUES (?, ?, ?, ?, ?, ?, NULL, 'lunch')",
+		)
+			.bind(
+				crypto.randomUUID(),
+				user!.id,
+				"2020-01-01T08:00:00.000Z",
+				JSON.stringify(["Old meal"]),
+				JSON.stringify({}),
+				JSON.stringify({ calories: 999, proteinG: 99, carbsG: 99, fatG: 99 }),
+			)
+			.run();
+
+		const todayResponse = await authedFetch("/meals/today", token);
+		const todayBody = await todayResponse.json<{ meals: unknown[] }>();
+		expect(todayBody.meals).toEqual([]);
+
+		const pastResponse = await authedFetch("/meals/today?date=2020-01-01", token);
+		expect(pastResponse.status).toBe(200);
+		const pastBody = await pastResponse.json<{ consumed: { calories: number }; meals: unknown[] }>();
+		expect(pastBody.consumed.calories).toBe(999);
+		expect(pastBody.meals).toHaveLength(1);
+	});
+
+	it("rejects a malformed date", async () => {
+		const token = await signUpAndGetToken(env.DB, PHONE);
+		await completeOnboarding(token);
+
+		const response = await authedFetch("/meals/today?date=01-01-2020", token);
+		expect(response.status).toBe(400);
+	});
+
+	it("rejects a well-formed but invalid calendar date", async () => {
+		const token = await signUpAndGetToken(env.DB, PHONE);
+		await completeOnboarding(token);
+
+		const response = await authedFetch("/meals/today?date=2020-13-45", token);
+		expect(response.status).toBe(400);
+	});
 });
 
 describe("GET /meals/usual", () => {
